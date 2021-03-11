@@ -60,10 +60,7 @@ class TmClassify:
         self.model = self.createModel()
         self.model.summary()
         self.pathlist = pathlist
-        self.bg_buffer = []
-        self.bg_path = r'images/trainsetALLV6/*/*.jpg'
         self.train_data_count = [len(i) for i in self.pathlist]
-        self.pathbglist = glob2.glob(self.bg_path)
         classDict = {
             'class':classlist,
             'index': [*range(len(classlist))]
@@ -73,7 +70,7 @@ class TmClassify:
         self.model.compile(optimizer=op,loss='categorical_crossentropy',metrics=['accuracy'])
 
         self.pad_param = 5
-        self.rotate_degree_param = 90
+        self.rotate_degree_param = 5
         
     def createModel(self):
         base_model=InceptionV3(input_shape=(224,224,3),weights=None,include_top=False) 
@@ -89,44 +86,43 @@ class TmClassify:
     def gen_data(self,random_index):
         img_pil = Image.open(os.path.join(r'D:\datasets\LSLOGO\Logo-2K+',self.pathlist[random_index])).convert('RGB')
         
-        pad_top = int(abs(np.random.uniform(0,self.pad_param)))
-        pad_bottom = int(abs(np.random.uniform(0,self.pad_param)))
-        pad_left = int(abs(np.random.uniform(0,self.pad_param)))
-        pad_right = int(abs(np.random.uniform(0,self.pad_param)))
-        rotate_param = np.random.uniform(0,self.rotate_degree_param)
+        # pad_top = int(abs(np.random.uniform(0,self.pad_param)))
+        # pad_bottom = int(abs(np.random.uniform(0,self.pad_param)))
+        # pad_left = int(abs(np.random.uniform(0,self.pad_param)))
+        # pad_right = int(abs(np.random.uniform(0,self.pad_param)))
+        # rotate_param = np.random.uniform(0,self.rotate_degree_param)
         
-        flip_flag = np.random.randint(0,1)
-        mirror_flag = np.random.randint(0,1)
+        # flip_flag = np.random.randint(0,1)
+        # mirror_flag = np.random.randint(0,1)
         
         
-        if(flip_flag):
-            img_pil = ImageOps.flip(img_pil)
-        if(mirror_flag):
-            img_pil = ImageOps.mirror(img_pil)
+        # if(flip_flag):
+        #     img_pil = ImageOps.flip(img_pil)
+        # if(mirror_flag):
+        #     img_pil = ImageOps.mirror(img_pil)
         
-        blur_rad = np.random.normal(loc=0.0, scale=2, size=None)
-        img_pil = img_pil.filter(ImageFilter.GaussianBlur(blur_rad))
+        # blur_rad = np.random.normal(loc=0.0, scale=1, size=None)
+        # img_pil = img_pil.filter(ImageFilter.GaussianBlur(blur_rad))
         
-        enhancer_contrat = ImageEnhance.Contrast(img_pil)
-        enhancer_brightness = ImageEnhance.Brightness(img_pil)
-        enhancer_color = ImageEnhance.Color(img_pil)
-        contrast_factor = np.random.normal(loc=1.0, scale=0.5, size=None)
-        color_factor = np.max([0,1-abs(np.random.normal(loc=0, scale=0.5, size=None))])
+        # enhancer_contrat = ImageEnhance.Contrast(img_pil)
+        # enhancer_brightness = ImageEnhance.Brightness(img_pil)
+        # enhancer_color = ImageEnhance.Color(img_pil)
+        # contrast_factor = np.random.normal(loc=1.0, scale=0.25, size=None)
+        # color_factor = np.max([0,1-abs(np.random.normal(loc=0, scale=0.5, size=None))])
 
-        rotate_factor = np.random.normal(loc=0, scale=0.17, size=None)
-        translate_factor_hor = np.random.normal(loc=0, scale=5, size=None)
-        translate_factor_ver = np.random.normal(loc=0, scale=5, size=None)
-        brightness_factor = np.random.normal(loc=1.0, scale=0.5, size=None)
+        # translate_factor_hor = np.random.normal(loc=0, scale=5, size=None)
+        # translate_factor_ver = np.random.normal(loc=0, scale=5, size=None)
+        # brightness_factor = np.random.normal(loc=1.0, scale=0.5, size=None)
 
-        img_pil = enhancer_contrat.enhance(contrast_factor)
-        img_pil = enhancer_brightness.enhance(brightness_factor)
-        img_pil = enhancer_color.enhance(color_factor)
-        img_pil = ImageChops.offset(img_pil, int(translate_factor_hor), int(translate_factor_ver))
+        # img_pil = enhancer_contrat.enhance(contrast_factor)
+        # img_pil = enhancer_brightness.enhance(brightness_factor)
+        # img_pil = enhancer_color.enhance(color_factor)
+        # img_pil = ImageChops.offset(img_pil, int(translate_factor_hor), int(translate_factor_ver))
         
-        img_pil = img_pil.rotate(rotate_param,resample = Image.BILINEAR,expand = True, fillcolor = (255,255,255))
+        # img_pil = img_pil.rotate(rotate_param,resample = Image.BILINEAR,expand = True, fillcolor = (255,255,255))
         
         img = np.asarray(img_pil)
-        img = cv2.copyMakeBorder(img, pad_top, pad_bottom, pad_left, pad_right, cv2.BORDER_CONSTANT,value=(255,255,255))
+        # img = cv2.copyMakeBorder(img, pad_top, pad_bottom, pad_left, pad_right, cv2.BORDER_CONSTANT,value=(255,255,255))
         img= cv2.resize(img, dsize=(self.input_shape))
         img = img/127.5 - 1
         
@@ -149,7 +145,7 @@ class TmClassify:
             for step_index in range(max_step):
                     batch_img = np.zeros((batch_size,self.input_shape[0],self.input_shape[1],3 ))
                     batch_target = np.zeros((batch_size,self.numclass))
-                    allclass = []
+                    # allclass = []
                     for batch_index in range(batch_size):
                         
                         random_index = np.random.randint(len(self.pathlist))
@@ -159,8 +155,8 @@ class TmClassify:
                         real_index = real_index+1
                     
                     # print(len(np.unique(allclass)))
-                    save_img = (batch_img[np.random.randint(batch_size)]+1)*127.5
-                    save_img = Image.fromarray(save_img.astype('uint8'))
+                    # save_img = (batch_img[np.random.randint(batch_size)]+1)*127.5
+                    # save_img = Image.fromarray(save_img.astype('uint8'))
                     # save_img.save('a.png')
                     # print(batch_target)
                     train_loss = self.model.train_on_batch(batch_img,batch_target)
