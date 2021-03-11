@@ -66,7 +66,7 @@ class TmClassify:
             'index': [*range(len(classlist))]
             }
         self.classdf = pd.DataFrame.from_dict(classDict)
-        op = Adam(lr=0.0001)
+        op = Adam(lr=0.001)
         self.model.compile(optimizer=op,loss='categorical_crossentropy',metrics=['accuracy'])
 
         self.pad_param = 5
@@ -86,40 +86,40 @@ class TmClassify:
     def gen_data(self,random_index):
         img_pil = Image.open(os.path.join(r'D:\datasets\LSLOGO\Logo-2K+',self.pathlist[random_index])).convert('RGB')
         
-        # pad_top = int(abs(np.random.uniform(0,self.pad_param)))
-        # pad_bottom = int(abs(np.random.uniform(0,self.pad_param)))
-        # pad_left = int(abs(np.random.uniform(0,self.pad_param)))
-        # pad_right = int(abs(np.random.uniform(0,self.pad_param)))
-        # rotate_param = np.random.uniform(0,self.rotate_degree_param)
+        pad_top = int(abs(np.random.uniform(0,self.pad_param)))
+        pad_bottom = int(abs(np.random.uniform(0,self.pad_param)))
+        pad_left = int(abs(np.random.uniform(0,self.pad_param)))
+        pad_right = int(abs(np.random.uniform(0,self.pad_param)))
+        rotate_param = np.random.uniform(0,self.rotate_degree_param)
         
-        # flip_flag = np.random.randint(0,1)
-        # mirror_flag = np.random.randint(0,1)
+        flip_flag = np.random.randint(0,1)
+        mirror_flag = np.random.randint(0,1)
         
         
-        # if(flip_flag):
-        #     img_pil = ImageOps.flip(img_pil)
-        # if(mirror_flag):
-        #     img_pil = ImageOps.mirror(img_pil)
+        if(flip_flag):
+            img_pil = ImageOps.flip(img_pil)
+        if(mirror_flag):
+            img_pil = ImageOps.mirror(img_pil)
         
-        # blur_rad = np.random.normal(loc=0.0, scale=1, size=None)
-        # img_pil = img_pil.filter(ImageFilter.GaussianBlur(blur_rad))
+        blur_rad = np.random.normal(loc=0.0, scale=1, size=None)
+        img_pil = img_pil.filter(ImageFilter.GaussianBlur(blur_rad))
         
-        # enhancer_contrat = ImageEnhance.Contrast(img_pil)
-        # enhancer_brightness = ImageEnhance.Brightness(img_pil)
-        # enhancer_color = ImageEnhance.Color(img_pil)
-        # contrast_factor = np.random.normal(loc=1.0, scale=0.25, size=None)
-        # color_factor = np.max([0,1-abs(np.random.normal(loc=0, scale=0.5, size=None))])
+        enhancer_contrat = ImageEnhance.Contrast(img_pil)
+        enhancer_brightness = ImageEnhance.Brightness(img_pil)
+        enhancer_color = ImageEnhance.Color(img_pil)
+        contrast_factor = np.random.normal(loc=1.0, scale=0.25, size=None)
+        color_factor = np.max([0,1-abs(np.random.normal(loc=0, scale=0.5, size=None))])
 
-        # translate_factor_hor = np.random.normal(loc=0, scale=5, size=None)
-        # translate_factor_ver = np.random.normal(loc=0, scale=5, size=None)
-        # brightness_factor = np.random.normal(loc=1.0, scale=0.5, size=None)
+        translate_factor_hor = np.random.normal(loc=0, scale=5, size=None)
+        translate_factor_ver = np.random.normal(loc=0, scale=5, size=None)
+        brightness_factor = np.random.normal(loc=1.0, scale=0.5, size=None)
 
-        # img_pil = enhancer_contrat.enhance(contrast_factor)
-        # img_pil = enhancer_brightness.enhance(brightness_factor)
-        # img_pil = enhancer_color.enhance(color_factor)
-        # img_pil = ImageChops.offset(img_pil, int(translate_factor_hor), int(translate_factor_ver))
+        img_pil = enhancer_contrat.enhance(contrast_factor)
+        img_pil = enhancer_brightness.enhance(brightness_factor)
+        img_pil = enhancer_color.enhance(color_factor)
+        img_pil = ImageChops.offset(img_pil, int(translate_factor_hor), int(translate_factor_ver))
         
-        # img_pil = img_pil.rotate(rotate_param,resample = Image.BILINEAR,expand = True, fillcolor = (255,255,255))
+        img_pil = img_pil.rotate(rotate_param,resample = Image.BILINEAR,expand = True, fillcolor = (255,255,255))
         
         img = np.asarray(img_pil)
         # img = cv2.copyMakeBorder(img, pad_top, pad_bottom, pad_left, pad_right, cv2.BORDER_CONSTANT,value=(255,255,255))
@@ -177,6 +177,6 @@ class TmClassify:
                     
 if __name__ == "__main__":
     TC = TmClassify()
-    TC.model = load_model('2kInceptionDense.h5')
+    # TC.model = load_model('2kInceptionDense.h5')
     # TC.model.save('Inw2KDen.h5')
     TC.train(1,10000,100,100)
