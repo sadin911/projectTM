@@ -1,0 +1,31 @@
+*.DS_Store
+*.pyc
+*.swp
+*.h5
+*.jpg
+*.png
+*.pkl
+temp/*
+dist/*
+build/*
+keras/datasets/data/*
+keras/datasets/temp/*
+docs/site/*
+docs/sources/*
+docs/theme/fonts/*
+docs/theme/img/*
+tags
+Keras.egg-info
+/**/images/*
+/**/logs/*
+/**/jsonfromAPI/*
+/**/models/*
+# test-related
+.coverage
+.cache
+.pytest_cache
+
+# developer environments
+.idea
+.vscode
+
