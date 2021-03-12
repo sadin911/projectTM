@@ -19,7 +19,7 @@ import pickle
 from sklearn.preprocessing import normalize
 from pathlib import Path
 from tensorflow.python.keras.models import Model, load_model
-
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 path_input = r'images/*.png'
 df = pd.read_csv(r'D:/datasets/LSLOGO/List/test_images_root.txt', delimiter = "\t",header=None)
 pathlist = df[0].tolist()
@@ -48,7 +48,7 @@ for file in range(path_num):
     img_pil = Image.open(fp).convert('RGB')
     img_pil = img_pil.resize((224,224))
     img_cv = np.asarray(img_pil)
-    indput_data = tf.keras.applications.resnet.preprocess_input(img_cv)
+    indput_data = img_cv/127.5-1
     indput_data = np.expand_dims(indput_data, axis = 0)
     out = model.predict(indput_data)[0]
     # normalized_v = out / np.sqrt(np.sum(out**2))

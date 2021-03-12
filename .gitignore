@@ -5,6 +5,11 @@
 *.jpg
 *.png
 *.pkl
+*.bmp
+src/*
+/**/src/outputDIPInceptionV3test/*
+/**/src/dataset/*
+/**/src/imageGroup/*
 temp/*
 dist/*
 build/*

@@ -20,8 +20,11 @@ from sklearn.preprocessing import normalize
 from pathlib import Path
 from tensorflow.python.keras.models import Model, load_model
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
-path_input = r'images/*.png'
-pathlist = glob2.glob(path_input)
+path_input = r'D:/project/projectTM/src/Images/**/'
+types = ('*.bmp', '*.jpg' ,'.*gif' ,'*.png' , '*.tif','*.jpeg')
+pathlist = []
+for files in types:
+    pathlist.extend(glob2.glob(os.path.join(path_input, files)))
     
 def distance(pointA, pointB):
     dist = np.linalg.norm(pointA - pointB)
@@ -40,7 +43,7 @@ for file in range(path_num):
     img_pil = Image.open(fp).convert('RGB')
     img_pil = img_pil.resize((224,224))
     img_cv = np.asarray(img_pil)
-    indput_data = tf.keras.applications.resnet.preprocess_input(img_cv)
+    indput_data = img_cv/127.5-1
     indput_data = np.expand_dims(indput_data, axis = 0)
     out = model.predict(indput_data)[0]
     # normalized_v = out / np.sqrt(np.sum(out**2))
@@ -52,11 +55,11 @@ for file in range(path_num):
     features.append(normalized_v)
 
 
-pkl_filename = "scbDIP_no_inceptionV3test.pkl"
+pkl_filename = "scbDIP_no_inceptionV3test_N.pkl"
 with open(pkl_filename, 'wb') as file:
     pickle.dump(features, file)
     
-pkl_filename = "pathlistDIP_no_inceptionV3test.pkl"
+pkl_filename = "pathlistDIP_no_inceptionV3test_N.pkl"
 with open(pkl_filename, 'wb') as file:
     pickle.dump(pathlist[0:path_num], file)
     
