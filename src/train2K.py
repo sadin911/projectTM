@@ -178,5 +178,5 @@ class TmClassify:
 if __name__ == "__main__":
     TC = TmClassify()
     # TC.model = load_model('2kInception.h5')
-    # TC.model.save('Inw2KDen.h5')
+    TC.model.save('Inw2Kgray.h5')
     TC.train(1,10000,100,100)

@@ -20,7 +20,6 @@ from sklearn.preprocessing import normalize
 from pathlib import Path
 from tensorflow.python.keras.models import Model, load_model
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
-path_input = r'images/*.png'
 df = pd.read_csv(r'D:/datasets/LSLOGO/List/test_images_root.txt', delimiter = "\t",header=None)
 pathlist = df[0].tolist()
 # pathlist = glob2.glob(path_input)
@@ -35,7 +34,7 @@ def distance(pointA, pointB):
     dist = np.linalg.norm(pointA - pointB)
     return dist
 
-model_ori = load_model('2kInception.h5')
+model_ori = load_model('2kInceptionLAUG.h5')
 model_ori.summary()
 
 model = Model(model_ori.input,model_ori.layers[-2].output)
@@ -45,7 +44,7 @@ features = []
 path_num = len(pathlist)//1
 for file in range(path_num):
     fp = os.path.join(r'D:\datasets\LSLOGO\Logo-2K+',pathlist[file])
-    img_pil = Image.open(fp).convert('RGB')
+    img_pil = Image.open(fp).convert('L')
     img_pil = img_pil.resize((224,224))
     img_cv = np.asarray(img_pil)
     indput_data = img_cv/127.5-1
@@ -60,16 +59,16 @@ for file in range(path_num):
     features.append(normalized_v)
 
 
-pkl_filename = "scb2K_no_inceptionV3test.pkl"
+pkl_filename = "scb2K_no_inceptionV3testGray.pkl"
 with open(pkl_filename, 'wb') as file:
     pickle.dump(features, file)
     
-pkl_filename = "pathlist2K_no_inceptionV3test.pkl"
+pkl_filename = "pathlist2K_no_inceptionV3testGray.pkl"
 with open(pkl_filename, 'wb') as file:
     pickle.dump(pathlist[0:path_num], file)
     
-features = pickle.load(open(r'scb2K_no_inceptionV3test.pkl', 'rb'))
-pathlist = pickle.load(open(r'pathlist2K_no_inceptionV3test.pkl', 'rb'))
+features = pickle.load(open(r'scb2K_no_inceptionV3testGray.pkl', 'rb'))
+pathlist = pickle.load(open(r'pathlist2K_no_inceptionV3testGray.pkl', 'rb'))
 
 
 f = np.asarray(features)
@@ -100,9 +99,9 @@ for n in range(len(features)):
     in_par = paths[n].split('/')[0]
     in_name = "_".join(paths[n].split('/')[-2])
     in_name = inpath[2].split(".")[0]
-    Path(f"output2KInceptionV3test/{inpath[0]}/{inpath[1]}/{in_name}").mkdir(parents=True, exist_ok=True)
+    Path(f"output2KInceptionV3testGray/{inpath[0]}/{inpath[1]}/{in_name}").mkdir(parents=True, exist_ok=True)
     for i in range(50):
         img = Image.open(os.path.join(r'D:\datasets\LSLOGO\Logo-2K+',pathsTop[i])).convert('RGB')
         filename = os.path.basename(pathsTop[i])
         sc = scoreTop[i]
-        img.save(f"output2KInceptionV3test/{inpath[0]}/{inpath[1]}/{in_name}/{i}_{sc}.jpg")
+        img.save(f"output2KInceptionV3testGray/{inpath[0]}/{inpath[1]}/{in_name}/{i}_{sc}.jpg")
