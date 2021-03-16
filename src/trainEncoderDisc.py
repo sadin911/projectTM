@@ -177,5 +177,5 @@ class TmClassify:
 if __name__ == "__main__":
     TC = TmClassify()
     # TC.model = load_model('DIPMatch.h5')
-    TC.encoder.save('Inw2Kgray.h5')
+    # TC.encoder.save('Inw2Kgray.h5')
     TC.train(1,10000,50,100)
