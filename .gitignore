@@ -1,12 +1,12 @@
 *.DS_Store
-*.pyc
 *.swp
 *.h5
 *.jpg
 *.png
 *.pkl
 *.bmp
-src/*
+src/*.pkl
+src/logs*
 /**/src/outputDIPInceptionV3test/*
 /**/src/dataset/*
 /**/src/imageGroup/*
