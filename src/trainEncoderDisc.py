@@ -19,7 +19,7 @@ import io
 import sys
 import shutil
 import cv2
-from tensorflow.python.keras.layers.merge import add, concatenate,Dot
+from tensorflow.python.keras.layers.merge import add, concatenate,Dot,Multiply
 from tensorflow.python.keras.models import Model, Sequential
 from tensorflow.python.keras.layers.convolutional import Conv2D, MaxPooling2D
 from tensorflow.python.keras.layers import Input, Dense, Activation , LeakyReLU, Flatten, BatchNormalization, Dropout
@@ -48,36 +48,36 @@ class TmClassify:
         self.input_shape = (224,224)
         self.filter_count = 32
         self.kernel_size = (3, 3)
-        self.leakrelu_alpha = 0.2
         self.encoder = self.createEncoder()
         Input1 = Input(shape=(224,224,3))
         Input2 = Input(shape=(224,224,3))
         # target = Dot(axes=1)([self.encoder(Input1), self.encoder(Input2)])
+        # x = Multiply()([self.encoder(Input1), self.encoder(Input2)])
         x = concatenate(inputs = [self.encoder(Input1), self.encoder(Input2)])
-        target = Dense(1)(x)
         self.discriminator = self.createDiscriminator()
         y = self.discriminator(x)
         self.model = Model(inputs=[Input1,Input2],outputs=y)
         self.model.summary()
-        self.pathlist = pathlist
-        self.train_data_count = [len(i) for i in self.pathlist]
-        op = Adam(lr=0.0001)
-        self.model.compile(optimizer=op,loss='mse',metrics=['accuracy'])
-        self.pad_param = 5
-        self.rotate_degree_param = 90
+        op = Adam(lr=0.00001)
+        self.model.compile(optimizer=op,loss='binary_crossentropy',metrics=['accuracy'])
+        self.pad_param = 0
+        self.rotate_degree_param = 0
         
     def createEncoder(self):
         base_model=InceptionV3(input_shape=(224,224,3),weights=None,include_top=False) 
-        x=base_model.output
-        x=GlobalAveragePooling2D()(x)
-        x = LayerNormalization()(x)
-        model=Model(inputs=base_model.input,outputs=x)
+        x = base_model.output
+        x = Flatten()(x)
+        x = Dense(2048,activation='sigmoid')(x)
+        model = Model(inputs=base_model.input,outputs=x)
         return model
     
     def createDiscriminator(self):
-        x = Input(shape = 4096)
-        target = Dense(1)(x)
-        model = Model(inputs=x,outputs=target)
+        input1 = Input(shape=4096)
+        x = Dense(1024,activation='relu')(input1)
+        x = Dense(512,activation='relu')(x)
+        x = Dense(256,activation='relu')(x)
+        target = Dense(1,activation='sigmoid')(x)
+        model = Model(inputs=input1,outputs=target)
         return model
     
     
@@ -127,7 +127,7 @@ class TmClassify:
         return img
     
     def train(self,start_epoch, max_epoch, batch_size, viz_interval):
-        max_step = sum([len(i) for i in self.pathlist]) // batch_size
+        max_step = sum([len(i) for i in sdir]) // batch_size
         # permu_ind = list(range(len(self.pathlist)))
         step = 0
         for epoch in range(start_epoch,max_epoch):
@@ -137,21 +137,23 @@ class TmClassify:
                     batch_img1 = np.zeros((batch_size,self.input_shape[0],self.input_shape[1],3))
                     batch_img2 = np.zeros((batch_size,self.input_shape[0],self.input_shape[1],3))
                     batch_target = np.zeros(batch_size)
-                    for batch_index in range(batch_size//2+1):
+                    for batch_index in range(batch_size//2):
+                        # print(batch_index)
                         random_permu = np.random.permutation(len(sdir))
-                        filelist = glob2.glob(sdir[batch_index]+'/*')
+                        filelist = glob2.glob(sdir[random_permu[batch_index]]+'/*')
                         file_permu = np.random.permutation(len(filelist))
                         img1 = self.gen_data(filelist[file_permu[0]])
                         img2 = self.gen_data(filelist[file_permu[1]])
                         batch_target[batch_index] = 1
                         batch_img1[batch_index] = img1
                         batch_img2[batch_index] = img2
-                        real_index = real_index+1
+                     
                     
                     for batch_index in range(batch_size//2,batch_size):
+                        # print(batch_index)
                         random_permu = np.random.permutation(len(sdir))
-                        filelist1 = glob2.glob(sdir[batch_index]+'/*')
-                        filelist2 = glob2.glob(sdir[-1-(-1*batch_index)]+'/*')
+                        filelist1 = glob2.glob(sdir[random_permu[batch_index]]+'/*')
+                        filelist2 = glob2.glob(sdir[random_permu[-1-batch_index]]+'/*')
                         file_permu1 = np.random.permutation(len(filelist1))
                         file_permu2 = np.random.permutation(len(filelist2))
                         img1 = self.gen_data(filelist1[file_permu1[0]])
@@ -159,7 +161,7 @@ class TmClassify:
                         batch_target[batch_index] = 0
                         batch_img1[batch_index] = img1
                         batch_img2[batch_index] = img2
-                        real_index = real_index+1
+                      
                     
                     train_loss = self.model.train_on_batch([batch_img1,batch_img2],batch_target)
                     with train_summary_writer.as_default():
@@ -170,12 +172,18 @@ class TmClassify:
                     print('\r epoch ' + str(epoch) + ' / ' + str(max_epoch) + '   ' + 'step ' + str(step_index) + ' / ' + str(max_step) + '    loss = ' + str(train_loss))
                     
                     if(step_index%viz_interval==0):
-                       self.encoder.save('DIPencoder.h5')
-                       self.discriminator.save('DIPdiscriminator.h5')
-                       self.model.save('DIPMatch.h5')
+                        print('ok')
+                        self.model.layers[2].save_weights('DIPencoderWeightsV2.h5')
+                        self.model.layers[4].save_weights('DIPdiscriminatorWeightsV2.h5')
+                        # self.model.save('DIPMatch.h5')
                     
 if __name__ == "__main__":
     TC = TmClassify()
-    # TC.model = load_model('DIPMatch.h5')
-    # TC.encoder.save('Inw2Kgray.h5')
-    TC.train(1,10000,50,100)
+    # TC.encoder = load_model('DIPEncoder.h5')
+    # TC.discriminator = load_model('DIPdiscriminator.h5')
+    # TC.encoder.load_weights('DIPencoderWeights.h5')
+    # TC.discriminator.load_weights('DIPdiscriminatorWeights.h5')
+    TC.model = load_model('DIPMatchV1.h5')
+    # TC.model.layers[2].save_weights('DIPencoderWeightsV1.h5')
+    # TC.model.layers[4].save_weights('DIPdiscriminatorWeightsV1.h5')
+    TC.train(1,10000,10,200)

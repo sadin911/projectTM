@@ -17,13 +17,15 @@ import pickle
 from sklearn.preprocessing import normalize
 from pathlib import Path
 from tensorflow.python.keras.models import Model, load_model
+from tensorflow.python.keras.layers import Input, Dense, Activation , LeakyReLU, Flatten, BatchNormalization, Dropout,LayerNormalization
+from tensorflow.keras.applications import MobileNet,InceptionV3
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 path_input = r'D:/project/projectTM/src/ImagesALL/DIP/N/**/'
 path_ref = r'D:/project/projectTM/src/ImagesALL/DIP/R/**/'
 types = ('*.bmp', '*.jpg' ,'.*gif' ,'*.png' , '*.tif','*.jpeg')
 pathlist = []
 pathref = []
-# shutil.rmtree('outputDIPEnV3LAUG')
+shutil.rmtree('outputDIPEnV3')
 
 
 for files in types:
@@ -34,10 +36,28 @@ def distance(pointA, pointB):
     dist = np.linalg.norm(pointA - pointB)
     return dist
 
-model = load_model('DIPencoder.h5')
-model.summary()
+def createEncoder():
+       base_model=InceptionV3(input_shape=(224,224,3),weights=None,include_top=False) 
+       x = base_model.output
+       x = Flatten()(x)
+       x = Dense(2048,activation='sigmoid')(x)
+       model = Model(inputs=base_model.input,outputs=x)
+       return model
+    
+def createDiscriminator():
+    input1 = Input(shape=4096)
+    x = Dense(1024,activation='relu')(input1)
+    x = Dense(512,activation='relu')(x)
+    x = Dense(256,activation='relu')(x)
+    target = Dense(1,activation='sigmoid')(x)
+    model = Model(inputs=input1,outputs=target)
+    return model
 
-model_discriminator = load_model('DIPdiscriminator.h5')
+model = createEncoder()
+model_discriminator = createDiscriminator()
+
+model_discriminator.load_weights('DIPdiscriminatorWeightsV1.h5')
+model.load_weights('DIPencoderWeightsV1.h5')
 
 features = []
 feature_ref = []
@@ -109,7 +129,7 @@ for n in range(len(features)):
     score = []
     batch_feature = np.zeros((len(features_ref),4096))
     for j in range(len(features_ref)):
-        match_feature = np.concatenate((input_f, features_ref[j]), axis=0)
+        match_feature = np.concatenate((features_ref[j],input_f), axis=0)
         # match_feature = np.expand_dims(match_feature,axis=0)
         batch_feature[j] = match_feature
         # score.append(dist)
@@ -129,7 +149,7 @@ for n in range(len(features)):
     in_name = os.path.basename(paths[n])
     in_name = in_name.split('.')[0]
     Path(f"outputDIPEnV3/{in_name}").mkdir(parents=True, exist_ok=True)
-    for i in range(50):
+    for i in range(20):
         img = Image.open(pathsTop[i]).convert('RGB')
         img_input = Image.open(paths[n]).convert('RGB')
         filename = os.path.basename(pathsTop[i])
