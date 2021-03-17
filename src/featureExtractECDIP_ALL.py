@@ -19,13 +19,17 @@ from pathlib import Path
 from tensorflow.python.keras.models import Model, load_model
 from tensorflow.python.keras.layers import Input, Dense, Activation , LeakyReLU, Flatten, BatchNormalization, Dropout,LayerNormalization
 from tensorflow.keras.applications import MobileNet,InceptionV3
+
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 path_input = r'D:/project/projectTM/src/ImagesALL/DIP/N/**/'
-path_ref = r'D:/project/projectTM/src/ImagesALL/DIP/R/**/'
+path_ref = r'D:/datasets/DIP_PIC_DATA/scan/**/'
 types = ('*.bmp', '*.jpg' ,'.*gif' ,'*.png' , '*.tif','*.jpeg')
 pathlist = []
 pathref = []
-shutil.rmtree('outputDIPEnV3')
+dirpath = 'outputDIPEnV4'
+if os.path.exists(dirpath):
+    shutil.rmtree(dirpath)
+
 
 
 for files in types:
@@ -33,12 +37,12 @@ for files in types:
     pathref.extend(glob2.glob(os.path.join(path_ref, files)))
 
 def createEncoder():
-       base_model=InceptionV3(input_shape=(224,224,3),weights=None,include_top=False) 
-       x = base_model.output
-       x = Flatten()(x)
-       x = Dense(2048,activation='sigmoid')(x)
-       model = Model(inputs=base_model.input,outputs=x)
-       return model
+    base_model=InceptionV3(input_shape=(224,224,3),weights=None,include_top=False) 
+    x = base_model.output
+    x = Flatten()(x)
+    x = Dense(2048,activation='sigmoid')(x)
+    model = Model(inputs=base_model.input,outputs=x)
+    return model
     
 def createDiscriminator():
     input1 = Input(shape=4096)
@@ -52,8 +56,8 @@ def createDiscriminator():
 model = createEncoder()
 model_discriminator = createDiscriminator()
 
-model_discriminator.load_weights('DIPdiscriminatorWeightsV1.h5')
-model.load_weights('DIPencoderWeightsV1.h5')
+model_discriminator.load_weights(r'models/DIPdiscriminatorWeightsV4.h5')
+model.load_weights(r'models/DIPencoderWeightsV4.h5')
 
 features = []
 feature_ref = []
@@ -91,28 +95,28 @@ for file in range(path_num):
     print(f'{file}//{path_num}')
     feature_ref.append(normalized_v)
 
+Path(r"models/DIPEnV4All/").mkdir(parents=True, exist_ok=True)
 
-
-pkl_filename = "scbDIP_no_EnV3.pkl"
+pkl_filename = r"models/DIPEnV4All/scbDIP_no_EnV4.pkl"
 with open(pkl_filename, 'wb') as file:
     pickle.dump(features, file)
     
-pkl_filename = "scbDIP_no_EnV3ref.pkl"
+pkl_filename = r"models/DIPEnV4All/scbDIP_no_EnV4ref.pkl"
 with open(pkl_filename, 'wb') as file:
     pickle.dump(feature_ref, file)
     
-pkl_filename = "pathlistDIP_no_EnV3.pkl"
+pkl_filename = r"models/DIPEnV4All/pathlistDIP_no_EnV4.pkl"
 with open(pkl_filename, 'wb') as file:
     pickle.dump(pathlist[0:path_num], file)
     
-pkl_filename = "pathlistDIP_no_EnV3ref.pkl"
+pkl_filename = r"models/DIPEnV4All/pathlistDIP_no_EnV4ref.pkl"
 with open(pkl_filename, 'wb') as file:
     pickle.dump(pathref[0:path_num], file)
     
-features = pickle.load(open(r'scbDIP_no_EnV3.pkl', 'rb'))
-features_ref = pickle.load(open(r'scbDIP_no_EnV3ref.pkl', 'rb'))
-pathlist = pickle.load(open(r'pathlistDIP_no_EnV3.pkl', 'rb'))
-pathref = pickle.load(open(r'pathlistDIP_no_EnV3ref.pkl', 'rb'))
+features = pickle.load(open(r'models/DIPEnV4All/scbDIP_no_EnV4.pkl', 'rb'))
+features_ref = pickle.load(open(r'models/DIPEnV4All/scbDIP_no_EnV4ref.pkl', 'rb'))
+pathlist = pickle.load(open(r'models/DIPEnV4All/pathlistDIP_no_EnV4.pkl', 'rb'))
+pathref = pickle.load(open(r'models/DIPEnV4All/pathlistDIP_no_EnV4ref.pkl', 'rb'))
 
 
 f = np.asarray(features)
@@ -144,11 +148,11 @@ for n in range(len(features)):
     scoreTop = df_sort.score.tolist()
     in_name = os.path.basename(paths[n])
     in_name = in_name.split('.')[0]
-    Path(f"outputDIPEnV3/{in_name}").mkdir(parents=True, exist_ok=True)
-    for i in range(20):
+    Path(f"outputDIPEnV4/{in_name}").mkdir(parents=True, exist_ok=True)
+    for i in range(50):
         img = Image.open(pathsTop[i]).convert('RGB')
         img_input = Image.open(paths[n]).convert('RGB')
         filename = os.path.basename(pathsTop[i])
         sc = scoreTop[i]
-        img.save(f"outputDIPEnV3/{in_name}/{i}_{sc}.jpg")
-        img_input.save(f"outputDIPEnV3/{in_name}/00.jpg")
+        img.save(f"outputDIPEnV4/{in_name}/{i}_{sc}.jpg")
+        img_input.save(f"outputDIPEnV4/{in_name}/00.jpg")
