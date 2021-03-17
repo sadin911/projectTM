@@ -29,7 +29,7 @@ Keras.egg-info
 .coverage
 .cache
 .pytest_cache
-
+*.7z
 # developer environments
 .idea
 .vscode
