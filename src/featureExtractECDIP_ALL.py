@@ -20,21 +20,25 @@ from tensorflow.python.keras.models import Model, load_model
 from tensorflow.python.keras.layers import Input, Dense, Activation , LeakyReLU, Flatten, BatchNormalization, Dropout,LayerNormalization
 from tensorflow.keras.applications import MobileNet,InceptionV3
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
-path_input = r'D:/project/projectTM/src/ImagesALL/DIP/N/**/'
-path_ref = r'D:/datasets/DIP_PIC_DATA/scan/**/'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+path_input = r'D:/project/projectTM/src/ImagesALLDB/DIP/N/**/'
+path_ref = r'D:/project/projectTM/src/ImagesALLDB/DIP/R/**/'
 types = ('*.bmp', '*.jpg' ,'.*gif' ,'*.png' , '*.tif','*.jpeg')
+df = pd.read_csv(r'D:/datasets/LSLOGO/List/test_images_root.txt', delimiter = "\t",header=None)
+path2K = df[0].tolist()
 pathlist = []
 pathref = []
-dirpath = 'outputDIPEnV4'
+dirpath = 'outputDIPEnV5'
 if os.path.exists(dirpath):
     shutil.rmtree(dirpath)
 
-
+path2K = [r'D:/datasets/LSLOGO/Logo-2K+/' + x for x in path2K]
 
 for files in types:
     pathlist.extend(glob2.glob(os.path.join(path_input, files)))
     pathref.extend(glob2.glob(os.path.join(path_ref, files)))
+    
+pathref.extend(path2K)
 
 def createEncoder():
     base_model=InceptionV3(input_shape=(224,224,3),weights=None,include_top=False) 
@@ -56,67 +60,74 @@ def createDiscriminator():
 model = createEncoder()
 model_discriminator = createDiscriminator()
 
-model_discriminator.load_weights(r'models/DIPdiscriminatorWeightsV4.h5')
-model.load_weights(r'models/DIPencoderWeightsV4.h5')
+model_discriminator.load_weights(r'DIPdiscriminatorWeightsV5.h5')
+model.load_weights(r'DIPencoderWeightsV5.h5')
 
-features = []
+feature = []
 feature_ref = []
-path_num = len(pathlist)//1
-for file in range(path_num):
-    fp = pathlist[file]
-    img_pil = Image.open(fp).convert('RGB')
-    img_pil = img_pil.resize((224,224))
-    img_cv = np.asarray(img_pil)
-    indput_data = img_cv/127.5-1
-    indput_data = np.expand_dims(indput_data, axis = 0)
-    out = model.predict(indput_data)[0]
-    normalized_v = out / np.sqrt(np.sum(out**2))
-    normalized_v = out
-    filename = pathlist[file].split('/')
-    str1 = "_"
-    filename = str1.join(filename)
-    print(f'{file}//{path_num}')
-    features.append(normalized_v)
+IterNum_N = 7
+batchsize_N = len(pathlist)//IterNum_N
 
-path_num = len(pathref)//1
-for file in range(path_num):
-    fp = pathref[file]
-    img_pil = Image.open(fp).convert('RGB')
-    img_pil = img_pil.resize((224,224))
-    img_cv = np.asarray(img_pil)
-    indput_data = img_cv/127.5-1
-    indput_data = np.expand_dims(indput_data, axis = 0)
-    out = model.predict(indput_data)[0]
-    normalized_v = out / np.sqrt(np.sum(out**2))
-    normalized_v = out
-    filename = pathref[file].split('/')
-    str1 = "_"
-    filename = str1.join(filename)
-    print(f'{file}//{path_num}')
-    feature_ref.append(normalized_v)
+real_index = 0
 
-Path(r"models/DIPEnV4All/").mkdir(parents=True, exist_ok=True)
-
-pkl_filename = r"models/DIPEnV4All/scbDIP_no_EnV4.pkl"
-with open(pkl_filename, 'wb') as file:
-    pickle.dump(features, file)
+for iteration in range(IterNum_N):
+    batchImg = np.zeros((batchsize_N,224,224,3))
+    for batch_index in range(batchsize_N):
+        fp = pathlist[real_index]
+        img_pil = Image.open(fp).convert('RGB')
+        img_pil = img_pil.resize((224,224))
+        img_cv = np.asarray(img_pil)
+        batchImg[batch_index] = img_cv/127.5-1   
+        real_index = real_index + 1
+        print(f'{real_index}//{len(pathlist)}')
+        
+        
+    out = model.predict(batchImg)
+    for n in range(len(out)):
+        feature.append(out[n])
     
-pkl_filename = r"models/DIPEnV4All/scbDIP_no_EnV4ref.pkl"
+
+IterNum_R = 10
+batchsize_R = len(pathref)//IterNum_R
+batchImg = np.zeros((batchsize_R,224,224,3))
+real_index = 0
+
+for iteration in range(IterNum_R):
+    batchImg = np.zeros((batchsize_R,224,224,3))
+    for batch_index in range(batchsize_R):
+        fp = pathref[real_index]
+        img_pil = Image.open(fp).convert('RGB')
+        img_pil = img_pil.resize((224,224))
+        img_cv = np.asarray(img_pil)
+        batchImg[batch_index] = img_cv/127.5-1  
+        real_index = real_index + 1
+        print(f'{real_index}//{len(pathref)}')
+    out = model.predict(batchImg)
+    for n in range(len(out)):
+        feature_ref.append(out[n])
+
+Path(r"models/DIPEnV5All/").mkdir(parents=True, exist_ok=True)
+
+pkl_filename = r"models/DIPEnV5All/scbDIP_no_EnV5.pkl"
+with open(pkl_filename, 'wb') as file:
+    pickle.dump(feature, file)
+    
+pkl_filename = r"models/DIPEnV5All/scbDIP_no_EnV5ref.pkl"
 with open(pkl_filename, 'wb') as file:
     pickle.dump(feature_ref, file)
     
-pkl_filename = r"models/DIPEnV4All/pathlistDIP_no_EnV4.pkl"
+pkl_filename = r"models/DIPEnV5All/pathlistDIP_no_EnV5.pkl"
 with open(pkl_filename, 'wb') as file:
-    pickle.dump(pathlist[0:path_num], file)
+    pickle.dump(pathlist, file)
     
-pkl_filename = r"models/DIPEnV4All/pathlistDIP_no_EnV4ref.pkl"
+pkl_filename = r"models/DIPEnV5All/pathlistDIP_no_EnV5ref.pkl"
 with open(pkl_filename, 'wb') as file:
-    pickle.dump(pathref[0:path_num], file)
+    pickle.dump(pathref, file)
     
-features = pickle.load(open(r'models/DIPEnV4All/scbDIP_no_EnV4.pkl', 'rb'))
-features_ref = pickle.load(open(r'models/DIPEnV4All/scbDIP_no_EnV4ref.pkl', 'rb'))
-pathlist = pickle.load(open(r'models/DIPEnV4All/pathlistDIP_no_EnV4.pkl', 'rb'))
-pathref = pickle.load(open(r'models/DIPEnV4All/pathlistDIP_no_EnV4ref.pkl', 'rb'))
+features = pickle.load(open(r'models/DIPEnV5All/scbDIP_no_EnV5.pkl', 'rb'))
+features_ref = pickle.load(open(r'models/DIPEnV5All/scbDIP_no_EnV5ref.pkl', 'rb'))
+pathlist = pickle.load(open(r'models/DIPEnV5All/pathlistDIP_no_EnV5.pkl', 'rb'))
+pathref = pickle.load(open(r'models/DIPEnV5All/pathlistDIP_no_EnV5ref.pkl', 'rb'))
 
 
 f = np.asarray(features)
@@ -136,7 +147,7 @@ for n in range(len(features)):
     score = model_discriminator.predict(batch_feature)  
     score = score.tolist()
     pd_dict = {
-        'path':pathref,
+        'path':pathref[0:len(features_ref)],
         'score':score
         }
     
@@ -148,11 +159,19 @@ for n in range(len(features)):
     scoreTop = df_sort.score.tolist()
     in_name = os.path.basename(paths[n])
     in_name = in_name.split('.')[0]
-    Path(f"outputDIPEnV4/{in_name}").mkdir(parents=True, exist_ok=True)
+    Path(f"outputDIPEnV5/{in_name}").mkdir(parents=True, exist_ok=True)
+    P_total = 0
+    index_T = 1
+    for n in range(len(pathsTop)):
+        path = pathsTop[n].split('_')[0].split('/')[-1]
+        if(path==in_name.split('_')[0]):
+            P_total = P_total + index_T/(n+1)
+    ngenuine = index_T - 1
+    AP = P_total / ngenuine
     for i in range(50):
         img = Image.open(pathsTop[i]).convert('RGB')
         img_input = Image.open(paths[n]).convert('RGB')
         filename = os.path.basename(pathsTop[i])
         sc = scoreTop[i]
-        img.save(f"outputDIPEnV4/{in_name}/{i}_{sc}.jpg")
-        img_input.save(f"outputDIPEnV4/{in_name}/00.jpg")
+        img.save(f"outputDIPEnV5/{in_name}/{i}_{sc}.jpg")
+        img_input.save(f"outputDIPEnV5/{in_name}/00.jpg")
