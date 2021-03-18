@@ -132,8 +132,9 @@ pathref = pickle.load(open(r'models/DIPEnV5All/pathlistDIP_no_EnV5ref.pkl', 'rb'
 
 f = np.asarray(features)
 f_ref = np.asarray(features_ref)
+Total_AP = 0
 for n in range(len(features)):
-    print(n)
+    # print(n)
     input_f = f[n]
     # pair = np.transpose(f)
     # score = np.matmul(input_f,pair)
@@ -162,12 +163,19 @@ for n in range(len(features)):
     Path(f"outputDIPEnV5/{in_name}").mkdir(parents=True, exist_ok=True)
     P_total = 0
     index_T = 1
-    for n in range(len(pathsTop)):
-        path = pathsTop[n].split('_')[0].split('/')[-1]
+    list_find = []
+    for k in range(len(pathsTop)):
+        path = pathsTop[k].split('_')[0].split('\\')[-1]
         if(path==in_name.split('_')[0]):
-            P_total = P_total + index_T/(n+1)
+            P_total = P_total + float(index_T)/float(k+1)
+            list_find.append(k)
+            index_T = index_T + 1
+            
+            
     ngenuine = index_T - 1
-    AP = P_total / ngenuine
+    AP = float(P_total) / float(ngenuine)
+    print({f"index={in_name.split('_')[0]} AP={AP} Rank={list_find}"})
+    Total_AP = Total_AP + AP
     for i in range(50):
         img = Image.open(pathsTop[i]).convert('RGB')
         img_input = Image.open(paths[n]).convert('RGB')
@@ -175,3 +183,6 @@ for n in range(len(features)):
         sc = scoreTop[i]
         img.save(f"outputDIPEnV5/{in_name}/{i}_{sc}.jpg")
         img_input.save(f"outputDIPEnV5/{in_name}/00.jpg")
+        
+MAPAP = Total_AP/len(features_ref)
+print(MAPAP)
