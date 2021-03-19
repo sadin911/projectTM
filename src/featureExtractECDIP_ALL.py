@@ -19,9 +19,10 @@ from pathlib import Path
 from tensorflow.python.keras.models import Model, load_model
 from tensorflow.python.keras.layers import Input, Dense, Activation , LeakyReLU, Flatten, BatchNormalization, Dropout,LayerNormalization
 from tensorflow.keras.applications import MobileNet,InceptionV3
+from CMC import CMC
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
-path_input = r'D:/project/projectTM/src/ImagesALLDB/DIP/N/**/'
+path_input = r'D:/datasets/TradeMark/trainingSet/Images[ReName]/DIP/Search/**/'
 path_ref = r'D:/project/projectTM/src/ImagesALLDB/DIP/R/**/'
 types = ('*.bmp', '*.jpg' ,'.*gif' ,'*.png' , '*.tif','*.jpeg')
 df = pd.read_csv(r'D:/datasets/LSLOGO/List/test_images_root.txt', delimiter = "\t",header=None)
@@ -133,6 +134,7 @@ pathref = pickle.load(open(r'models/DIPEnV5All/pathlistDIP_no_EnV5ref.pkl', 'rb'
 f = np.asarray(features)
 f_ref = np.asarray(features_ref)
 Total_AP = 0
+Rank_CMC = np.zeros(len(features_ref))
 for n in range(len(features)):
     # print(n)
     input_f = f[n]
@@ -168,8 +170,9 @@ for n in range(len(features)):
         path = pathsTop[k].split('_')[0].split('\\')[-1]
         if(path==in_name.split('_')[0]):
             P_total = P_total + float(index_T)/float(k+1)
+            Rank_CMC[k] += 1
             list_find.append(k)
-            index_T = index_T + 1
+            index_T += 1
             
             
     ngenuine = index_T - 1
@@ -186,3 +189,29 @@ for n in range(len(features)):
         
 MAPAP = Total_AP/len(features_ref)
 print(MAPAP)
+
+sum_CMC = np.zeros(len(features))
+for i in range(len(sum_CMC)):
+    temp = Rank_CMC[:i]
+    sum_CMC[i] = temp.sum()/len(features)
+
+cmc_dict = {
+    'InceptionV3ShareEC (rank50)': sum_CMC
+}
+
+cmc = CMC(cmc_dict)
+cmc.plot(title = 'CMC on Search Rank\n', rank=100,
+         xlabel='Rank',
+         ylabel='Hit Rate', show_grid=False)
+
+pkl_filename = r"models/DIPEnV5All/sum_CMC.pkl"
+with open(pkl_filename, 'wb') as file:
+    pickle.dump(sum_CMC, file)
+    
+pkl_filename = r"models/DIPEnV5All/CMC_Rank.pkl"
+with open(pkl_filename, 'wb') as file:
+    pickle.dump(Rank_CMC, file)
+    
+pkl_filename = r"models/DIPEnV5All/MAPAP.pkl"
+with open(pkl_filename, 'wb') as file:
+    pickle.dump(MAPAP, file)

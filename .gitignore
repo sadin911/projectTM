@@ -5,6 +5,7 @@
 *.png
 *.pkl
 *.bmp
+*.pyc
 src/*.pkl
 src/logs*
 /**/src/outputDIPInceptionV3test/*
