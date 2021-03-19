@@ -22,7 +22,7 @@ from tensorflow.keras.applications import MobileNet,InceptionV3
 from CMC import CMC
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
-path_input = r'D:/project/projectTM/src/ImagesALLDB/DIP/N/**/'
+path_input = r'D:/datasets/TradeMark/trainingSet/Images[ReName]/DIP/Search/**/'
 path_ref = r'D:/project/projectTM/src/ImagesALLDB/DIP/R/**/'
 types = ('*.bmp', '*.jpg' ,'.*gif' ,'*.png' , '*.tif','*.jpeg')
 df = pd.read_csv(r'D:/datasets/LSLOGO/List/test_images_root.txt', delimiter = "\t",header=None)

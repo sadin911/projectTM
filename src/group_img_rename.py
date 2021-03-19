@@ -22,11 +22,12 @@ TR_List = df_drop['TR_NO_R'].tolist()
 
 print(len(np.unique(TN_List)))
 print(len(np.unique(TR_List)))
-dirpath = 'outputDIPEnV5'
-if os.path.exists('imageGroupALLDB'):
-    shutil.rmtree('imageGroupALLDB')
-if os.path.exists('ImagesALLDB'):
-    shutil.rmtree('ImagesALLDB')
+group_path = 'imageGroupReName'
+sep_path = 'ImagesReName'
+if os.path.exists(group_path):
+    shutil.rmtree(group_path)
+if os.path.exists(sep_path):
+    shutil.rmtree(sep_path)
 
 
 for i in range(len(TN_List)):
@@ -49,14 +50,14 @@ for i in range(len(TN_List)):
         imgN = Image.open(os.path.join(r'C:\Users\chonlatid.d\Downloads\DIP_PIC_DATA',pathN,fileN))
         fileN = fileN.split('.')[0]
            
-        Path(f"imageGroupALLDB/{i}").mkdir(parents=True, exist_ok=True)
-        Path(f"ImagesALLDB/DIP/N").mkdir(parents=True, exist_ok=True)
-        Path(f"ImagesALLDB/DIP/R").mkdir(parents=True, exist_ok=True)
-        Refimg.save(f"imageGroupALLDB/{i}/{i}_{j}.jpg")
-        imgN.save(f"imageGroupALLDB/{i}/{i}_0.jpg")
+        Path(f"{group_path}/{i}").mkdir(parents=True, exist_ok=True)
+        Path(f"{sep_path}/DIP/Search").mkdir(parents=True, exist_ok=True)
+        Path(f"{sep_path}/DIP/Reference").mkdir(parents=True, exist_ok=True)
+        Refimg.save(f"{group_path}/{i}/{i}_{j}.jpg")
+        imgN.save(f"{group_path}/{i}/{i}_0.jpg")
         
-        Refimg.save(f"imagesALLDB/DIP/R/{i}_{j}.jpg")
-        imgN.save(f"imagesALLDB/DIP/N/{i}_0.jpg")
+        Refimg.save(f"{sep_path}/DIP/Reference/{i}_{j}.jpg")
+        imgN.save(f"{sep_path}/DIP/Search/{i}_0.jpg")
         j = j+1
     except:
         b=2

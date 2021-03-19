@@ -1,4 +1,10 @@
 # -*- coding: utf-8 -*-
+"""
+Created on Fri Mar 19 10:00:47 2021
+
+@author: chonlatid.d
+"""
+
 from method.AlgorithmRestnet import Restnet
 import os
 import glob2
