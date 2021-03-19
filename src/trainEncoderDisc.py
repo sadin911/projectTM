@@ -221,8 +221,8 @@ class TmClassify:
                     
                     if(step_index%viz_interval==0):
                         print('ok')
-                        self.model.layers[2].save_weights('DIPencoderWeightsV5.h5')
-                        self.model.layers[4].save_weights('DIPdiscriminatorWeightsV5.h5')
+                        self.model.layers[2].save_weights('DIPencoderWeightsV6.h5')
+                        self.model.layers[4].save_weights('DIPdiscriminatorWeightsV6.h5')
                         # self.model.save('DIPMatch.h5')
                     
 if __name__ == "__main__":
@@ -231,7 +231,7 @@ if __name__ == "__main__":
     # TC.discriminator = load_model('DIPdiscriminator.h5')
     # TC.encoder.load_weights('DIPencoderWeights.h5')
     # TC.discriminator.load_weights('DIPdiscriminatorWeights.h5')
-    TC.model = load_model(r'models/DIPMatchV4.h5')
+    TC.model = load_model(r'DIPMatchV5.h5')
     # TC.model.layers[2].save_weights('DIPencoderWeightsV1.h5')
     # TC.model.layers[4].save_weights('DIPdiscriminatorWeightsV1.h5')
     TC.train(1,10000,40,200)
