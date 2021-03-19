@@ -13,9 +13,9 @@ class RunEvaluate:
         self.output_path = r'restnet/'
         self.iden_result=[]
         self.cmc_score=[]
-        # self.bg_list=[]
-        # for typee in ('*.bmp', '*.jpg' ,'.*gif' ,'*.png' , '*.tif','*.jpeg'): 
-        #     self.bg_list.extend(glob2.glob(self.path_background_db+typee))
+        self.bg_list=[]
+        for typee in ('*.bmp', '*.jpg' ,'.*gif' ,'*.png' , '*.tif','*.jpeg'): 
+            self.bg_list.extend(glob2.glob(self.path_background_db+typee))
 
         self.probe_list=os.listdir(self.path_probe_db)
         self.probe_image_list=[]
@@ -32,30 +32,34 @@ class RunEvaluate:
         #     feature = self.algo.feature_extract(self.bg_list[i])
         #     self.algo.enroll_to_DB(feature, "background_db_"+str(i))
         #     print(i)
-        # self.algo.enroll()
+        feature_list = self.algo.feature_extract_batch(self.bg_list, 5000)
+        for i in range(feature_list.shape[0]):
+            self.algo.enroll_to_DB(feature_list[i,:], "background_db_"+str(i))
+        print("done add bg to db")
+        self.algo.enroll()
         # self.algo.database = pickle.load(open(r'dbfeature.pk', 'rb'))
         # self.algo.ID = pickle.load(open(r'db_id.pk', 'rb')) 
         
-        # for i in range(len(self.probe_image_list)):
-        #     print(f'{i}')
-        #     for j in range(len(self.probe_image_list[i])):
-        #         feature = self.algo.feature_extract(self.probe_image_list[i][j])
-        #         if(j==0):
-        #             self.probe_feature.append(feature)
-        #         else:
-        #             self.algo.enroll_to_DB(feature, "probe_"+str(i)+"_"+str(j))
+        for i in range(len(self.probe_image_list)):
             
-        #     print(i)
-        self.algo.database = pickle.load(open(r'dbfeature_withprobe.pk', 'rb'))
-        self.algo.ID = pickle.load(open(r'db_id_with_probe.pk', 'rb'))      
-        self.probe_feature = pickle.load(open(r'db_probe_feature.pk', 'rb')) 
+            for j in range(len(self.probe_image_list[i])):
+                feature = self.algo.feature_extract(self.probe_image_list[i][j])
+                if(j==0):
+                    self.probe_feature.append(feature)
+                else:
+                    self.algo.enroll_to_DB(feature, "probe_"+str(i)+"_"+str(j))
+            
+            print(i)
+        # self.algo.database = pickle.load(open(r'dbfeature_withprobe.pk', 'rb'))
+        # self.algo.ID = pickle.load(open(r'db_id_with_probe.pk', 'rb'))      
+        # self.probe_feature = pickle.load(open(r'db_probe_feature.pk', 'rb')) 
         
         self.algo.enroll()
         
         self.iden_result=[]
-        for i in range(len(self.probe_image_list)):
+        for i in range(len(self.probe_feature)):
             print(f'{i}')
-            (iddd,score) = self.algo.retriev(self.probe_feature[i], 10000)
+            (iddd,score) = self.algo.retriev(self.probe_feature[i], 100)
             for j in range(1,len(self.probe_image_list[i])):
                 rank=iddd.index("probe_"+str(i)+'_'+str(j))+1
                 self.iden_result.append(rank)
@@ -72,7 +76,8 @@ class RunEvaluate:
         for rank_index in range(1,100):
             self.cmc_score.append(self.iden_result.count(rank_index+1)+self.cmc_score[-1])
         # 582 รูป
-        cmc_result=np.array(self.cmc_score)/582*100
+        cmc_result=np.array(self.cmc_score)/len(self.probe_image_list)*100
+        return cmc_result
         # summmm=0
         # for i in range(len(self.probe_image_list)):
         #     summmm = summmm + len(self.probe_image_list[i])-1
@@ -85,7 +90,7 @@ if __name__ == '__main__':
     # with open("db_id_with_probe.pk", 'wb') as file:
     #     pickle.dump(cat.algo.ID, file)
     
-    cat.create_cmc_graph()
+    cmc = cat.create_cmc_graph()
     # with open("dbfeature_withprobe.pk", 'wb') as file:
     #     pickle.dump(cat.algo.database, file)
     # with open("db_probe_feature.pk", 'wb') as file:

@@ -28,6 +28,7 @@ class Restnet:
         indput_data = np.expand_dims(indput_data, axis = 0)
         out = self.model.predict(indput_data)[0]
         normalized_v = out / np.sqrt(np.sum(out**2))
+        return normalized_v
         
     def feature_extract_batch(self,image_path_list,batch_size):
         image_pool = image_path_list
@@ -41,6 +42,7 @@ class Restnet:
             indput_data = tf.keras.applications.resnet.preprocess_input(img_cv)
             batch_data.append(indput_data)
             if(len(batch_data)==batch_size or len(image_pool)==0):
+                print("batch processing")
                 batch_result = self.model.predict(np.array(batch_data))
                 batch_data=[]
                 result_list.extend(batch_result)
