@@ -10,6 +10,8 @@ import os
 import glob2
 import pickle
 import numpy as np
+from CMC import CMC
+
 class RunEvaluate:
     def __init__(self,algo):
         print("start init")
@@ -82,7 +84,7 @@ class RunEvaluate:
         for rank_index in range(1,100):
             self.cmc_score.append(self.iden_result.count(rank_index+1)+self.cmc_score[-1])
         # 582 รูป
-        cmc_result=np.array(self.cmc_score)/len(self.probe_image_list)*100
+        cmc_result=np.array(self.cmc_score)/len(self.probe_image_list)
         return cmc_result
         # summmm=0
         # for i in range(len(self.probe_image_list)):
@@ -95,8 +97,16 @@ if __name__ == '__main__':
     #     pickle.dump(cat.algo.database, file)
     # with open("db_id_with_probe.pk", 'wb') as file:
     #     pickle.dump(cat.algo.ID, file)
+    cmc_data = cat.create_cmc_graph()
+    cmc_dict = {
+    'Restnet': cmc_data
+}
     
-    cmc = cat.create_cmc_graph()
+    
+    cmc = CMC(cmc_dict)
+    cmc.plot(title = 'CMC on Search Rank\n', rank=100,
+             xlabel='Rank',
+             ylabel='Hit Rate', show_grid=False)
     # with open("dbfeature_withprobe.pk", 'wb') as file:
     #     pickle.dump(cat.algo.database, file)
     # with open("db_probe_feature.pk", 'wb') as file:
