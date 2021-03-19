@@ -19,14 +19,17 @@ class Restnet:
         self.searchDB = None
 
     def feature_extract(self,image_path):
-        print("feature_extract")
+
         img_pil = Image.open(image_path).convert('RGB')
         img_pil = img_pil.resize((224,224))
         img_cv = np.asarray(img_pil)
         indput_data = tf.keras.applications.resnet.preprocess_input(img_cv)
         indput_data = np.expand_dims(indput_data, axis = 0)
         out = self.model.predict(indput_data)[0]
-        return out
+        normalized_v = out / np.sqrt(np.sum(out**2))
+        
+    
+        return normalized_v
     
     def match_1to1(self,template1,template2):
         score = np.dot(template1, template2)
@@ -43,11 +46,12 @@ class Restnet:
         
     
     def retriev(self,template,num_result):
-        if(self.searchDB==None):
-            raise Exception("you must call enroll() first before you can retrieve")
-        score = np.matmul(template,self.searchDB())
+        # if(self.searchDB==None):
+        #     raise Exception("you must call enroll() first before you can retrieve")
+        score = np.matmul(template,self.searchDB)
+        # score = np.random.rand(score.shape[0])
         l = zip(score, self.ID)
-        l.sort()
+        l=sorted(l, key = lambda x:x[0],reverse=True)
         # 'unzip'
         score, _id = zip(*l)
         return (_id,score)
@@ -55,3 +59,9 @@ class Restnet:
 if __name__ == '__main__':
     print("main")
     cat = Restnet()
+    feature = cat.feature_extract(r"D:\project\trademark\projectTM\src\imageGroupALL\2d_160115081\0.jpg")
+    cat.match_1to1(feature, feature)
+    for i in range(1000):
+        cat.enroll_to_DB(feature,str(i))
+    cat.enroll()
+    (_id,score) = cat.retriev(feature, 100)
