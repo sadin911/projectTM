@@ -80,7 +80,9 @@ class TmClassify:
     def createDiscriminator(self):
         input1 = Input(shape=2048)
         input2 = Input(shape=2048)
-        target = Dot(axes=1)([input1, input2])
+        x1 = Dense(2048,activation='relu')(input1)
+        x2 = Dense(2048,activation='relu')(input2)
+        target = Dot(axes=1)([x1, x2])
         model = Model(inputs=[input1,input2],outputs=target)
         return model
     
@@ -233,7 +235,7 @@ if __name__ == "__main__":
     # TC.discriminator = load_model('DIPdiscriminator.h5')
     # TC.encoder.load_weights('DIPencoderWeights.h5')
     # TC.discriminator.load_weights('DIPdiscriminatorWeights.h5')
-    TC.model = load_model(r'DIPMatchTinyV1.h5')
+    # TC.model = load_model(r'DIPMatchTinyV1.h5')
     # TC.model.layers[2].save_weights('DIPencoderWeightsV1.h5')
     # TC.model.layers[4].save_weights('DIPdiscriminatorWeightsV1.h5')
     TC.train(1,10000,40,200)
