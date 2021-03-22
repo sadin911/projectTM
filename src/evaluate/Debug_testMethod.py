@@ -26,7 +26,7 @@ class RunEvaluate:
         self.output_path = r'Result/InceptionV3ENDIP/'
         self.iden_result=[]
         self.cmc_score=[]
-        self.score = []
+        self.scores = []
         # self.bg_list=[]
         # for typee in ('*.bmp', '*.jpg' ,'.*gif' ,'*.png' , '*.tif','*.jpeg'): 
         #     self.bg_list.extend(glob2.glob(self.path_background_db+typee))
@@ -44,14 +44,29 @@ class RunEvaluate:
         
     def runEvaluate(self):
         print("[evaluating]")
+        
         print("[featureExtraction] search")
         template_search = self.algo.feature_extract_batch(self.probe_list_ref,100,pkl_save_path='feature_searchInceptionV3ECDIP.pkl')
         
         print("[featureExtraction] background")
-        template_ref = self.algo.feature_extract_batch(self.path_background_db,5000,pkl_save_path='feature_bgInceptionV3ECDIP.pkl')
-        print("done enroll and ready to iden")
+        template_ref = self.algo.feature_extract_batch(self.probe_list_ref,100,pkl_save_path='feature_bgInceptionV3ECDIP.pkl')
         
-        self.score = self.algo.match_1to1_batch(template_search, template_ref)
+        print("done enroll and ready to iden")
+        for i in range(len(template_search)):
+            search_id = self.probe_list_search[i].split('_')[0].split('\\')[-1]
+            self.algo.enroll_to_DB(template_search[i],search_id)
+        
+        for i in range(len(template_ref)):
+            ref_id = self.path_background_db[i].split('_')[0].split('\\')[-1]
+            self.algo.enroll_to_DB(template_ref[i],ref_id)
+            
+        # self.scores = self.algo.match_1to1_batch(template_search, template_ref)
+        for i in range(len(template_search)):
+            (ids,score) = self.algo.retrieve(template_search[i], 100)
+            for j in range(1,len(self.probe_list_search[i])):
+                rank=ids.index("probe_"+str(i)+'_'+str(j))+1
+                self.iden_result.append(rank)
+                print(rank)
         
     def create_cmc_graph(self):
         print("compute cmc graph")
@@ -70,6 +85,7 @@ if __name__ == '__main__':
     probe_list_search = cat.probe_list_search
     probe_list_ref = cat.probe_list_ref
     cat.runEvaluate()
+    scores = cat.scores
     # with open("dbfeature.pk", 'wb') as file:
     #     pickle.dump(cat.algo.database, file)
     # with open("db_id_with_probe.pk", 'wb') as file:
