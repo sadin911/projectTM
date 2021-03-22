@@ -63,7 +63,7 @@ class TmClassify:
         y = self.discriminator([x1,x2])
         self.model = Model(inputs=[Input1,Input2],outputs=y)
         self.model.summary()
-        op = Adam(lr=0.01)
+        op = Adam(lr=0.001) 
         self.model.compile(optimizer=op,loss='mse',metrics=['accuracy'])
         self.pad_param = 10
         self.rotate_degree_param = 45
