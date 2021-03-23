@@ -63,7 +63,7 @@ class TmClassify:
         y = self.discriminator([x1,x2])
         self.model = Model(inputs=[Input1,Input2],outputs=y)
         self.model.summary()
-        op = Adam(lr=0.0001) 
+        op = Adam(lr=0.0001)
         self.model.compile(optimizer=op,loss='mse',metrics=['accuracy'])
         self.pad_param = 10
         self.rotate_degree_param = 45
@@ -73,7 +73,6 @@ class TmClassify:
         x = base_model.output
         x = GlobalAveragePooling2D()(x)
         x = Dense(2048,activation='sigmoid')(x)
-        x = LayerNormalization()(x)
         model = Model(inputs=base_model.input,outputs=x)
         return model
     
@@ -225,8 +224,8 @@ class TmClassify:
                     
                     if(step_index%viz_interval==0):
                         print('ok')
-                        self.model.layers[2].save_weights('DIPencoderWeightsTinyV2.h5')
-                        self.model.layers[3].save_weights('DIPdiscriminatorWeightsTinyV2.h5')
+                        self.model.layers[2].save_weights('DIPencoderWeightsTinyV1.h5')
+                        self.model.layers[3].save_weights('DIPdiscriminatorWeightsTinyV1.h5')
                         # self.model.save('DIPMatch.h5')
                     
 if __name__ == "__main__":

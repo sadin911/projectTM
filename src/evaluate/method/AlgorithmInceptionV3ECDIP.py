@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 import tensorflow as tf
 from tensorflow import keras
 import numpy as np
@@ -135,6 +136,21 @@ class InceptionV3ENDIP:
             batch_feature[i] = match_feature
             
         score = self.Discriminator.predict(batch_feature)  
+        score = score.tolist()
+        pd_dict = {
+            'id':self.ID,
+            'score':score
+            }
+        df = pd.DataFrame.from_dict(pd_dict)
+        df_sort = df.sort_values(by="score",ascending=False)
+        df_sort = df_sort.reset_index(drop=True)
+        topScore = df_sort['score'].tolist()
+        topID = df_sort['id'].tolist()
+        
+        return (topID,topScore)
+    
+    def retrievDot(self,template,num_result):
+        score = np.matmul(template,self.searchDB)
         score = score.tolist()
         pd_dict = {
             'id':self.ID,

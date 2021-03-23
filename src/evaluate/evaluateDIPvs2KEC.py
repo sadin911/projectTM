@@ -32,6 +32,7 @@ class RunEvaluate:
             self.probe_image_list.append(glob2.glob(os.path.join(self.path_probe_db,folder_name,'*.jpg')))
         
         print("done init")
+     
     def runEvaluate(self):
         print("evaluate")
         print("add bg image to db")
@@ -41,7 +42,7 @@ class RunEvaluate:
            for j in range(len(self.probe_image_list[i])):
                temp_probelist.append(self.probe_image_list[i][j])
                
-        feature = self.algo.feature_extract_batch(temp_probelist, 100)
+        feature = self.algo.feature_extract_batch(temp_probelist, 100, 'DIPECProbe.pkl')
         rindex = 0
         for i in range(len(self.probe_image_list)):
             for j in range(len(self.probe_image_list[i])):
@@ -55,7 +56,7 @@ class RunEvaluate:
         self.algo.enroll()
         
      
-        feature_list = self.algo.feature_extract_batch(self.bg_list[:], 5000)  
+        feature_list = self.algo.feature_extract_batch(self.bg_list[:], 1000,'DIPECBackground.pkl')  
         for i in range(feature_list.shape[0]):
             self.algo.enroll_to_DB(feature_list[i,:], "background_db_"+str(i))
             
@@ -102,6 +103,7 @@ if __name__ == '__main__':
     # with open("db_id_with_probe.pk", 'wb') as file:
     #     pickle.dump(cat.algo.ID, file)
     cmc_data = cat.create_cmc_graph()
+    
     cmc_dict = {
     'ECDIP': cmc_data
 }
