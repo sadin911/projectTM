@@ -1,3 +1,5 @@
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow.python.keras
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.layers.core import Dense, Activation
@@ -14,7 +16,7 @@ import datetime
 from PIL import Image,ImageDraw,ImageFilter,ImageEnhance,ImageOps,ImageChops
 import numpy as np
 import cv2
-import os
+
 import io
 import sys
 import shutil
@@ -79,9 +81,8 @@ class TmClassify:
     def createDiscriminator(self):
         input1 = Input(shape=2048)
         input2 = Input(shape=2048)
-        x1 = Dense(2048,activation='relu')(input1)
-        x2 = Dense(2048,activation='relu')(input2)
-        target = Dot(axes=1)([x1, x2])
+        x = concatenate(inputs = [input1, input2])
+        target = Dense(1)(x)
         model = Model(inputs=[input1,input2],outputs=target)
         return model
     

@@ -22,14 +22,14 @@ from tensorflow.keras.applications import MobileNet,InceptionV3
 from CMC import CMC
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
-path_input = r'D:/datasets/TradeMark/trainingSet/Images[ReName]/DIP/Search/**/'
-path_ref = r'D:/project/projectTM/src/ImagesALLDB/DIP/R/**/'
+path_input = r'D:/datasets/TradeMark/trainingSet/ImagesRenameV2/DIP/Search/**/'
+path_ref = r'D:/datasets/TradeMark/trainingSet/ImagesRenameV2/DIP/Reference/**/'
 types = ('*.bmp', '*.jpg' ,'.*gif' ,'*.png' , '*.tif','*.jpeg')
 df = pd.read_csv(r'D:/datasets/LSLOGO/List/test_images_root.txt', delimiter = "\t",header=None)
 path2K = df[0].tolist()
 pathlist = []
 pathref = []
-dirpath = 'outputDIPEnV5'
+dirpath = 'V2outputDIPEnV5'
 if os.path.exists(dirpath):
     shutil.rmtree(dirpath)
 
@@ -109,26 +109,26 @@ for iteration in range(IterNum_R):
 
 Path(r"models/DIPEnV5All/").mkdir(parents=True, exist_ok=True)
 
-pkl_filename = r"models/DIPEnV5All/scbDIP_no_EnV5.pkl"
+pkl_filename = r"models/DIPEnV5All/V2scbDIP_no_EnV5.pkl"
 with open(pkl_filename, 'wb') as file:
     pickle.dump(feature, file)
     
-pkl_filename = r"models/DIPEnV5All/scbDIP_no_EnV5ref.pkl"
+pkl_filename = r"models/DIPEnV5All/V2scbDIP_no_EnV5ref.pkl"
 with open(pkl_filename, 'wb') as file:
     pickle.dump(feature_ref, file)
     
-pkl_filename = r"models/DIPEnV5All/pathlistDIP_no_EnV5.pkl"
+pkl_filename = r"models/DIPEnV5All/V2pathlistDIP_no_EnV5.pkl"
 with open(pkl_filename, 'wb') as file:
     pickle.dump(pathlist, file)
     
-pkl_filename = r"models/DIPEnV5All/pathlistDIP_no_EnV5ref.pkl"
+pkl_filename = r"models/DIPEnV5All/V2pathlistDIP_no_EnV5ref.pkl"
 with open(pkl_filename, 'wb') as file:
     pickle.dump(pathref, file)
     
-features = pickle.load(open(r'models/DIPEnV5All/scbDIP_no_EnV5.pkl', 'rb'))
-features_ref = pickle.load(open(r'models/DIPEnV5All/scbDIP_no_EnV5ref.pkl', 'rb'))
-pathlist = pickle.load(open(r'models/DIPEnV5All/pathlistDIP_no_EnV5.pkl', 'rb'))
-pathref = pickle.load(open(r'models/DIPEnV5All/pathlistDIP_no_EnV5ref.pkl', 'rb'))
+features = pickle.load(open(r'models/DIPEnV5All/V2scbDIP_no_EnV5.pkl', 'rb'))
+features_ref = pickle.load(open(r'models/DIPEnV5All/V2scbDIP_no_EnV5ref.pkl', 'rb'))
+pathlist = pickle.load(open(r'models/DIPEnV5All/V2pathlistDIP_no_EnV5.pkl', 'rb'))
+pathref = pickle.load(open(r'models/DIPEnV5All/V2pathlistDIP_no_EnV5ref.pkl', 'rb'))
 
 
 f = np.asarray(features)
@@ -162,7 +162,7 @@ for n in range(len(features)):
     scoreTop = df_sort.score.tolist()
     in_name = os.path.basename(paths[n])
     in_name = in_name.split('.')[0]
-    Path(f"outputDIPEnV5/{in_name}").mkdir(parents=True, exist_ok=True)
+   
     P_total = 0
     index_T = 1
     list_find = []
@@ -179,13 +179,14 @@ for n in range(len(features)):
     AP = float(P_total) / float(ngenuine)
     print({f"index={in_name.split('_')[0]} AP={AP} Rank={list_find}"})
     Total_AP = Total_AP + AP
+    Path(f"V2outputDIPEnV5/{in_name}_{list_find[0]}").mkdir(parents=True, exist_ok=True)
     for i in range(50):
         img = Image.open(pathsTop[i]).convert('RGB')
         img_input = Image.open(paths[n]).convert('RGB')
         filename = os.path.basename(pathsTop[i])
         sc = scoreTop[i]
-        img.save(f"outputDIPEnV5/{in_name}/{i}_{sc}.jpg")
-        img_input.save(f"outputDIPEnV5/{in_name}/00.jpg")
+        img.save(f"V2outputDIPEnV5/{in_name}_{list_find[0]}/{i}_{sc}.jpg")
+        img_input.save(f"V2outputDIPEnV5/{in_name}_{list_find[0]}/00.jpg")
         
 MAPAP = Total_AP/len(features_ref)
 print(MAPAP)
@@ -204,14 +205,14 @@ cmc.plot(title = 'CMC on Search Rank\n', rank=100,
          xlabel='Rank',
          ylabel='Hit Rate', show_grid=False)
 
-pkl_filename = r"models/DIPEnV5All/sum_CMC.pkl"
+pkl_filename = r"models/DIPEnV5All/V2sum_CMC.pkl"
 with open(pkl_filename, 'wb') as file:
     pickle.dump(sum_CMC, file)
     
-pkl_filename = r"models/DIPEnV5All/CMC_Rank.pkl"
+pkl_filename = r"models/DIPEnV5All/V2CMC_Rank.pkl"
 with open(pkl_filename, 'wb') as file:
     pickle.dump(Rank_CMC, file)
     
-pkl_filename = r"models/DIPEnV5All/MAPAP.pkl"
+pkl_filename = r"models/DIPEnV5All/V2MAPAP.pkl"
 with open(pkl_filename, 'wb') as file:
     pickle.dump(MAPAP, file)

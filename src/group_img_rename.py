@@ -12,6 +12,9 @@ import shutil
 from PIL import Image
 import pandas as pd
 from pathlib import Path
+import requests
+from io import BytesIO
+
 
 df = pd.read_csv(r"C:\Users\chonlatid.d\Downloads\DIP_PIC_DATA\drive-download-20210311T064932Z-001\dip_tr_like.csv",sep=";")
 df_file = pd.read_csv(r"C:\Users\chonlatid.d\Downloads\DIP_PIC_DATA\drive-download-20210311T064932Z-001\dip_tr_file.csv",sep=";")
@@ -22,8 +25,8 @@ TR_List = df_drop['TR_NO_R'].tolist()
 
 print(len(np.unique(TN_List)))
 print(len(np.unique(TR_List)))
-group_path = 'imageGroupReName'
-sep_path = 'ImagesReName'
+group_path = 'imageGroupReNameV2'
+sep_path = 'ImagesReNameV2'
 if os.path.exists(group_path):
     shutil.rmtree(group_path)
 if os.path.exists(sep_path):
@@ -38,7 +41,8 @@ for i in range(len(TN_List)):
         fileR = dfRef['FILE_NAME'].tolist()[0]
         if(len(fileR)>1):
             print(fileR)
-        Refimg = Image.open(os.path.join(r'C:\Users\chonlatid.d\Downloads\DIP_PIC_DATA',pathR,fileR))
+        response = requests.get(r'https://madrid.ipthailand.go.th/download/trademark?file=/image/TRS_SCAN/'+pathR+'/'+fileR)
+        Refimg = Image.open(BytesIO(response.content))
         fileR = fileR.split('.')[0]
         
         dfN = df_file[df_file['TR_NO']==TN_List[i]]
@@ -47,7 +51,9 @@ for i in range(len(TN_List)):
         
         if(len(fileN)>1):
            print(fileN)
-        imgN = Image.open(os.path.join(r'C:\Users\chonlatid.d\Downloads\DIP_PIC_DATA',pathN,fileN))
+           
+        response = requests.get(r'https://madrid.ipthailand.go.th/download/trademark?file=/image/TRS_SCAN/'+pathN+'/'+fileN)
+        imgN = Image.open(BytesIO(response.content))
         fileN = fileN.split('.')[0]
            
         Path(f"{group_path}/{i}").mkdir(parents=True, exist_ok=True)

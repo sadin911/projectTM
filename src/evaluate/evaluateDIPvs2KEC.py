@@ -19,7 +19,7 @@ class RunEvaluate:
         self.algo=algo
         self.bg_list= pd.read_csv(r'D:/datasets/LSLOGO/List/test_images_root.txt', delimiter = "\t",header=None)[0].tolist()
         self.bg_list = [r'D:/datasets/LSLOGO/Logo-2K+/' + x for x in  self.bg_list]
-        self.path_probe_db=r"D:\datasets\TradeMark\trainingSet\imageGroupReName"
+        self.path_probe_db=r"D:\datasets\TradeMark\trainingSet\imageGroupReNameV2"
         self.output_path = r'restnet/'
         self.iden_result=[]
         self.cmc_score=[]
@@ -103,7 +103,9 @@ if __name__ == '__main__':
     # with open("db_id_with_probe.pk", 'wb') as file:
     #     pickle.dump(cat.algo.ID, file)
     cmc_data = cat.create_cmc_graph()
-    
+    pkl_filename = r"cmc_data_ECDIP.pkl"
+    with open(pkl_filename, 'wb') as file:
+        pickle.dump(cmc_data, file)
     cmc_dict = {
     'ECDIP': cmc_data
 }
