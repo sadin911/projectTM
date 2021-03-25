@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Mar 25 17:06:56 2021
+
+@author: chonlatid.d
+"""
+
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow.python.keras
@@ -196,8 +203,11 @@ class TmClassify:
                             try:
                                 rand_2k = np.random.permutation(len(path2K))
                                 fp = os.path.join(r'D:\datasets\LSLOGO\Logo-2K+',path2K[rand_2k[0]])
-                                img1 = self.gen_data(fp)
-                                img2 = self.gen_data(fp)
+                                fp_par = Path(fp).parents[0]
+                                filedir = glob2.glob(str(fp_par) + '/*')
+                                random_permu = np.random.permutation(len(filedir))
+                                img1 = self.gen_data(filedir[random_permu[0]])
+                                img2 = self.gen_data(filedir[random_permu[1]])
                                 batch_target[batch_index] = 1
                                 batch_img1[batch_index] = img1
                                 batch_img2[batch_index] = img2
@@ -238,8 +248,8 @@ class TmClassify:
                     
                     if(step_index%viz_interval==0):
                         print('ok',end='\r')
-                        self.model.layers[2].save_weights('DIPencoderWeightsV9.h5')
-                        self.model.layers[4].save_weights('DIPdiscriminatorWeightsV9.h5')
+                        self.model.layers[2].save_weights('2KencoderWeightsV1.h5')
+                        self.model.layers[4].save_weights('2KdiscriminatorWeightsV1.h5')
                         # self.model.save('DIPMatch.h5')
                     
 if __name__ == "__main__":
