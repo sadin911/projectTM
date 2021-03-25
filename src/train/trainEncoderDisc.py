@@ -60,10 +60,10 @@ class TmClassify:
         y = self.discriminator(x)
         self.model = Model(inputs=[Input1,Input2],outputs=y)
         self.model.summary()
-        op = Adam(lr=0.0001)
+        op = Adam(lr=0.00001)
         self.model.compile(optimizer=op,loss='binary_crossentropy',metrics=['accuracy'])
-        self.pad_param = 10
-        self.rotate_degree_param = 45
+        self.pad_param = 0
+        self.rotate_degree_param = 5
         
     def createEncoder(self):
         base_model=InceptionV3(input_shape=(224,224,3),weights=None,include_top=False) 
@@ -116,10 +116,10 @@ class TmClassify:
         translate_factor_ver = np.random.normal(loc=0, scale=5, size=None)
         
 
-        img_pil = enhancer_contrat.enhance(contrast_factor)
-        img_pil = enhancer_brightness.enhance(brightness_factor)
-        img_pil = enhancer_color.enhance(color_factor)
-        img_pil = ImageChops.offset(img_pil, int(translate_factor_hor), int(translate_factor_ver))
+        # img_pil = enhancer_contrat.enhance(contrast_factor)
+        # img_pil = enhancer_brightness.enhance(brightness_factor)
+        # img_pil = enhancer_color.enhance(color_factor)
+        # img_pil = ImageChops.offset(img_pil, int(translate_factor_hor), int(translate_factor_ver))
         
         img_pil = img_pil.rotate(rotate_param,resample = Image.BILINEAR,expand = True, fillcolor = (255))
         
@@ -141,7 +141,7 @@ class TmClassify:
                     batch_img2 = np.zeros((batch_size,self.input_shape[0],self.input_shape[1],3))
                     batch_target = np.zeros(batch_size)
                     
-                    for batch_index in range(batch_size//4):
+                    for batch_index in range(batch_size//5):
                         #print(batch_index)
                        
                         while True:
@@ -158,7 +158,7 @@ class TmClassify:
                                 continue
                             break
                         
-                    for batch_index in range(batch_size//4,batch_size//3):
+                    for batch_index in range(batch_size//5,2*batch_size//5):
                         #print(batch_index)
                         
                         while True:
@@ -179,7 +179,7 @@ class TmClassify:
                                 continue
                             break
                        
-                    for batch_index in range(batch_size//3,batch_size//2):
+                    for batch_index in range(2*batch_size//5,3*batch_size//5):
                         #print(batch_index)
                          while True:
                             try:
@@ -199,7 +199,7 @@ class TmClassify:
                                 continue
                             break
                     
-                    for batch_index in range(batch_size//2,3*batch_size//4):
+                    for batch_index in range(3*batch_size//5,4*batch_size//5):
                         #print(batch_index)
                         while True:
                             try:
@@ -214,7 +214,7 @@ class TmClassify:
                                 continue
                             break
                         
-                    for batch_index in range(3*batch_size//4,batch_size):
+                    for batch_index in range(4*batch_size//5,batch_size):
                         #print(batch_index)
                         while True:
                             try:
@@ -247,8 +247,8 @@ class TmClassify:
                     
                     if(step_index%viz_interval==0):
                         print('ok')
-                        self.model.layers[2].save_weights('DIPencoderWeightsV6.h5')
-                        self.model.layers[4].save_weights('DIPdiscriminatorWeightsV6.h5')
+                        self.model.layers[2].save_weights('DIPencoderWeightsV7.h5')
+                        self.model.layers[4].save_weights('DIPdiscriminatorWeightsV7.h5')
                         # self.model.save('DIPMatch.h5')
                     
 if __name__ == "__main__":
@@ -257,7 +257,7 @@ if __name__ == "__main__":
     # TC.discriminator = load_model('DIPdiscriminator.h5')
     # TC.encoder.load_weights('DIPencoderWeights.h5')
     # TC.discriminator.load_weights('DIPdiscriminatorWeights.h5')
-    # TC.model = load_model(r'DIPMatchV5.h5')
+    TC.model = load_model(r'DIPMatchV6.h5')
     # TC.model.layers[2].save_weights('DIPencoderWeightsV1.h5')
     # TC.model.layers[4].save_weights('DIPdiscriminatorWeightsV1.h5')
-    TC.train(1,10000,40,200)
+    TC.train(1,10000,50,200)

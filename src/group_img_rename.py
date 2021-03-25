@@ -56,14 +56,14 @@ for i in range(len(TN_List)):
         imgN = Image.open(BytesIO(response.content))
         fileN = fileN.split('.')[0]
            
-        Path(f"{group_path}/{i}").mkdir(parents=True, exist_ok=True)
+        Path(f"{group_path}/{fileN}").mkdir(parents=True, exist_ok=True)
         Path(f"{sep_path}/DIP/Search").mkdir(parents=True, exist_ok=True)
         Path(f"{sep_path}/DIP/Reference").mkdir(parents=True, exist_ok=True)
-        Refimg.save(f"{group_path}/{i}/{i}_{j}.jpg")
-        imgN.save(f"{group_path}/{i}/{i}_0.jpg")
+        Refimg.save(f"{group_path}/{fileN}/{i}_{j}.jpg")
+        imgN.save(f"{group_path}/{fileN}/{i}_0.jpg")
         
-        Refimg.save(f"{sep_path}/DIP/Reference/{i}_{j}.jpg")
-        imgN.save(f"{sep_path}/DIP/Search/{i}_0.jpg")
+        Refimg.save(f"{sep_path}/DIP/Reference/{fileN}_{j}.jpg")
+        imgN.save(f"{sep_path}/DIP/Search/{fileN}_0.jpg")
         j = j+1
     except:
         b=2

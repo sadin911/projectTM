@@ -1,3 +1,6 @@
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 from tensorflow.keras.callbacks import TensorBoard
 import glob2
 import tensorflow as tf
@@ -5,7 +8,6 @@ import datetime
 from PIL import Image,ImageDraw,ImageFilter,ImageEnhance,ImageOps,ImageChops
 import numpy as np
 import cv2
-import os
 import io
 import sys
 import shutil
@@ -21,15 +23,17 @@ from tensorflow.python.keras.layers import Input, Dense, Activation , LeakyReLU,
 from tensorflow.keras.applications import MobileNet,InceptionV3
 from CMC import CMC
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
-path_input = r'D:/datasets/TradeMark/trainingSet/ImagesRenameV2/DIP/Search/**/'
-path_ref = r'D:/datasets/TradeMark/trainingSet/ImagesRenameV2/DIP/Reference/**/'
+
+path_input = r'D:/datasets/TradeMark/trainingSet/ImagesV2/DIP/Search/**/'
+path_ref = r'D:/datasets/TradeMark/trainingSet/ImagesV2/DIP/Reference/**/'
 types = ('*.bmp', '*.jpg' ,'.*gif' ,'*.png' , '*.tif','*.jpeg')
 df = pd.read_csv(r'D:/datasets/LSLOGO/List/test_images_root.txt', delimiter = "\t",header=None)
 path2K = df[0].tolist()
 pathlist = []
 pathref = []
-dirpath = 'V2outputDIPEnV5'
+dirpath = 'V2outputDIPEnV6'
+
+
 if os.path.exists(dirpath):
     shutil.rmtree(dirpath)
 
@@ -40,6 +44,13 @@ for files in types:
     pathref.extend(glob2.glob(os.path.join(path_ref, files)))
     
 pathref.extend(path2K)
+
+def progressBar(current, total, barLength = 20):
+    print('', end='\r')
+    percent = float(current) * 100 / total
+    arrow   = '-' * int(percent/100 * barLength - 1) + '>'
+    spaces  = ' ' * (barLength - len(arrow))
+    print('Progress: [%s%s] %d %%' % (arrow, spaces, percent), end='\r',flush=True)
 
 def createEncoder():
     base_model=InceptionV3(input_shape=(224,224,3),weights=None,include_top=False) 
@@ -61,8 +72,8 @@ def createDiscriminator():
 model = createEncoder()
 model_discriminator = createDiscriminator()
 
-model_discriminator.load_weights(r'DIPdiscriminatorWeightsV5.h5')
-model.load_weights(r'DIPencoderWeightsV5.h5')
+model_discriminator.load_weights(r'DIPdiscriminatorWeightsV6.h5')
+model.load_weights(r'DIPencoderWeightsV6.h5')
 
 feature = []
 feature_ref = []
@@ -81,7 +92,7 @@ for iteration in range(IterNum_N):
         batchImg[batch_index] = img_cv/127.5-1   
         real_index = real_index + 1
         print(f'{real_index}//{len(pathlist)}')
-        
+        # progressBar(real_index, len(pathlist))
         
     out = model.predict(batchImg)
     for n in range(len(out)):
@@ -103,32 +114,33 @@ for iteration in range(IterNum_R):
         batchImg[batch_index] = img_cv/127.5-1  
         real_index = real_index + 1
         print(f'{real_index}//{len(pathref)}')
+        # progressBar(real_index, len(pathref))
     out = model.predict(batchImg)
     for n in range(len(out)):
         feature_ref.append(out[n])
 
-Path(r"models/DIPEnV5All/").mkdir(parents=True, exist_ok=True)
+Path(r"models/DIPEnV6All/").mkdir(parents=True, exist_ok=True)
 
-pkl_filename = r"models/DIPEnV5All/V2scbDIP_no_EnV5.pkl"
+pkl_filename = r"models/DIPEnV6All/V2scbDIP_no_EnV6.pkl"
 with open(pkl_filename, 'wb') as file:
     pickle.dump(feature, file)
     
-pkl_filename = r"models/DIPEnV5All/V2scbDIP_no_EnV5ref.pkl"
+pkl_filename = r"models/DIPEnV6All/V2scbDIP_no_EnV6ref.pkl"
 with open(pkl_filename, 'wb') as file:
     pickle.dump(feature_ref, file)
     
-pkl_filename = r"models/DIPEnV5All/V2pathlistDIP_no_EnV5.pkl"
+pkl_filename = r"models/DIPEnV6All/V2pathlistDIP_no_EnV6.pkl"
 with open(pkl_filename, 'wb') as file:
     pickle.dump(pathlist, file)
     
-pkl_filename = r"models/DIPEnV5All/V2pathlistDIP_no_EnV5ref.pkl"
+pkl_filename = r"models/DIPEnV6All/V2pathlistDIP_no_EnV6ref.pkl"
 with open(pkl_filename, 'wb') as file:
     pickle.dump(pathref, file)
     
-features = pickle.load(open(r'models/DIPEnV5All/V2scbDIP_no_EnV5.pkl', 'rb'))
-features_ref = pickle.load(open(r'models/DIPEnV5All/V2scbDIP_no_EnV5ref.pkl', 'rb'))
-pathlist = pickle.load(open(r'models/DIPEnV5All/V2pathlistDIP_no_EnV5.pkl', 'rb'))
-pathref = pickle.load(open(r'models/DIPEnV5All/V2pathlistDIP_no_EnV5ref.pkl', 'rb'))
+features = pickle.load(open(r'models/DIPEnV6All/V2scbDIP_no_EnV6.pkl', 'rb'))
+features_ref = pickle.load(open(r'models/DIPEnV6All/V2scbDIP_no_EnV6ref.pkl', 'rb'))
+pathlist = pickle.load(open(r'models/DIPEnV6All/V2pathlistDIP_no_EnV6.pkl', 'rb'))
+pathref = pickle.load(open(r'models/DIPEnV6All/V2pathlistDIP_no_EnV6ref.pkl', 'rb'))
 
 
 f = np.asarray(features)
@@ -178,15 +190,16 @@ for n in range(len(features)):
     ngenuine = index_T - 1
     AP = float(P_total) / float(ngenuine)
     print({f"index={in_name.split('_')[0]} AP={AP} Rank={list_find}"})
+    # progressBar(n, len(features))
     Total_AP = Total_AP + AP
-    Path(f"V2outputDIPEnV5/{in_name}_{list_find[0]}").mkdir(parents=True, exist_ok=True)
+    Path(f"V2outputDIPEnV6/{in_name}_{list_find[0]}").mkdir(parents=True, exist_ok=True)
     for i in range(50):
         img = Image.open(pathsTop[i]).convert('RGB')
         img_input = Image.open(paths[n]).convert('RGB')
         filename = os.path.basename(pathsTop[i])
         sc = scoreTop[i]
-        img.save(f"V2outputDIPEnV5/{in_name}_{list_find[0]}/{i}_{sc}.jpg")
-        img_input.save(f"V2outputDIPEnV5/{in_name}_{list_find[0]}/00.jpg")
+        img.save(f"V2outputDIPEnV6/{in_name}_{list_find[0]}/{i}_{sc}.jpg")
+        img_input.save(f"V2outputDIPEnV6/{in_name}_{list_find[0]}/00.jpg")
         
 MAPAP = Total_AP/len(features_ref)
 print(MAPAP)
@@ -205,14 +218,14 @@ cmc.plot(title = 'CMC on Search Rank\n', rank=100,
          xlabel='Rank',
          ylabel='Hit Rate', show_grid=False)
 
-pkl_filename = r"models/DIPEnV5All/V2sum_CMC.pkl"
+pkl_filename = r"models/DIPEnV6All/V2sum_CMC.pkl"
 with open(pkl_filename, 'wb') as file:
     pickle.dump(sum_CMC, file)
     
-pkl_filename = r"models/DIPEnV5All/V2CMC_Rank.pkl"
+pkl_filename = r"models/DIPEnV6All/V2CMC_Rank.pkl"
 with open(pkl_filename, 'wb') as file:
     pickle.dump(Rank_CMC, file)
     
-pkl_filename = r"models/DIPEnV5All/V2MAPAP.pkl"
+pkl_filename = r"models/DIPEnV6All/V2MAPAP.pkl"
 with open(pkl_filename, 'wb') as file:
     pickle.dump(MAPAP, file)
