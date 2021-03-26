@@ -134,61 +134,61 @@ class TmClassify:
                     batch_img2 = np.zeros((batch_size,self.input_shape[0],self.input_shape[1],3))
                     batch_target = np.zeros(batch_size)
                     
-                    # for batch_index in range(batch_size//5):
-                    #     #print(batch_index)
+                    for batch_index in range(batch_size//5):
+                        #print(batch_index)
                        
-                    #     while True:
-                    #         try:
-                    #             random_permu = np.random.permutation(len(sdir))
-                    #             filelist = glob2.glob(sdir[random_permu[batch_index]]+'/*')
-                    #             file_permu = np.random.permutation(len(filelist))
-                    #             img1 = self.gen_data(filelist[file_permu[0]])
-                    #             img2 = self.gen_data(filelist[file_permu[1]])
-                    #             batch_target[batch_index] = 1
-                    #             batch_img1[batch_index] = img1
-                    #             batch_img2[batch_index] = img2
-                    #         except:
-                    #             continue
-                    #         break
+                        while True:
+                            try:
+                                random_permu = np.random.permutation(len(sdir))
+                                filelist = glob2.glob(sdir[random_permu[batch_index]]+'/*')
+                                file_permu = np.random.permutation(len(filelist))
+                                img1 = self.gen_data(filelist[file_permu[0]])
+                                img2 = self.gen_data(filelist[file_permu[1]])
+                                batch_target[batch_index] = 1
+                                batch_img1[batch_index] = img1
+                                batch_img2[batch_index] = img2
+                            except:
+                                continue
+                            break
                         
-                    # for batch_index in range(batch_size//5,2*batch_size//5):
-                    #     #print(batch_index)
+                    for batch_index in range(batch_size//5,2*batch_size//5):
+                        #print(batch_index)
                         
-                    #     while True:
-                    #         try:
-                    #             random_permu = np.random.permutation(len(sdir))
-                    #             rand_2k = np.random.permutation(len(path2K))
-                    #             fp = os.path.join(r'D:\datasets\LSLOGO\Logo-2K+',path2K[rand_2k[0]])
-                    #             filelist1 = glob2.glob(sdir[random_permu[batch_index]]+'/*')
-                    #             filelist2 = glob2.glob(sdir[random_permu[-1-batch_index]]+'/*')
-                    #             file_permu1 = np.random.permutation(len(filelist1))
-                    #             file_permu2 = np.random.permutation(len(filelist2)) 
-                    #             img1 = self.gen_data(filelist1[file_permu1[0]])
-                    #             img2 = self.gen_data(filelist2[file_permu2[0]])
-                    #             batch_target[batch_index] = 0
-                    #             batch_img1[batch_index] = img1
-                    #             batch_img2[batch_index] = img2
-                    #         except:
-                    #             continue
-                    #         break
+                        while True:
+                            try:
+                                random_permu = np.random.permutation(len(sdir))
+                                rand_2k = np.random.permutation(len(path2K))
+                                fp = os.path.join(r'D:\datasets\LSLOGO\Logo-2K+',path2K[rand_2k[0]])
+                                filelist1 = glob2.glob(sdir[random_permu[batch_index]]+'/*')
+                                filelist2 = glob2.glob(sdir[random_permu[-1-batch_index]]+'/*')
+                                file_permu1 = np.random.permutation(len(filelist1))
+                                file_permu2 = np.random.permutation(len(filelist2)) 
+                                img1 = self.gen_data(filelist1[file_permu1[0]])
+                                img2 = self.gen_data(filelist2[file_permu2[0]])
+                                batch_target[batch_index] = 0
+                                batch_img1[batch_index] = img1
+                                batch_img2[batch_index] = img2
+                            except:
+                                continue
+                            break
                        
-                    # for batch_index in range(2*batch_size//5,3*batch_size//5):
-                    #     #print(batch_index)
-                    #      while True:
-                    #         try:
-                    #             random_permu = np.random.permutation(len(sdir))
-                    #             rand_2k = np.random.permutation(len(path2K))
-                    #             fp = os.path.join(r'D:\datasets\LSLOGO\Logo-2K+',path2K[rand_2k[0]])
-                    #             filelist1 = glob2.glob(sdir[random_permu[batch_index]]+'/*')
-                    #             file_permu1 = np.random.permutation(len(filelist1))
-                    #             img1 = self.gen_data(filelist1[file_permu1[0]])
-                    #             img2 = self.gen_data(fp)
-                    #             batch_target[batch_index] = 0
-                    #             batch_img1[batch_index] = img1
-                    #             batch_img2[batch_index] = img2
-                    #         except:
-                    #             continue
-                    #         break
+                    for batch_index in range(2*batch_size//5,3*batch_size//5):
+                        #print(batch_index)
+                          while True:
+                            try:
+                                random_permu = np.random.permutation(len(sdir))
+                                rand_2k = np.random.permutation(len(path2K))
+                                fp = os.path.join(r'D:\datasets\LSLOGO\Logo-2K+',path2K[rand_2k[0]])
+                                filelist1 = glob2.glob(sdir[random_permu[batch_index]]+'/*')
+                                file_permu1 = np.random.permutation(len(filelist1))
+                                img1 = self.gen_data(filelist1[file_permu1[0]])
+                                img2 = self.gen_data(fp)
+                                batch_target[batch_index] = 0
+                                batch_img1[batch_index] = img1
+                                batch_img2[batch_index] = img2
+                            except:
+                                continue
+                            break
                     
                     for batch_index in range(1*batch_size//5,batch_size//2):
                         #print(batch_index)

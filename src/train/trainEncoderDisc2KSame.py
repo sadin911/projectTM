@@ -10,7 +10,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow.python.keras
 from tensorflow.keras.optimizers import Adam
 from tensorflow.python.keras.models import Model, load_model
-from tensorflow.keras.applications import InceptionV3
+from tensorflow.keras.applications import InceptionV3,InceptionResNetV2
 from IPython.display import Image
 import glob2
 import tensorflow as tf
@@ -56,28 +56,25 @@ class TmClassify:
         y = self.discriminator(x)
         self.model = Model(inputs=[Input1,Input2],outputs=y)
         self.model.summary()
+        # op = Adam(lr=0.002, beta_1=0.5, beta_2=0.999, epsilon=1e-08, decay=0.0)
         op = Adam(lr=0.0001)
         self.model.compile(optimizer=op,loss='binary_crossentropy',metrics=['accuracy'])
-        self.pad_param = 50
-        self.rotate_degree_param = 45
+        self.pad_param = 5
+        self.rotate_degree_param = 5
         
     def createEncoder(self):
-        base_model=InceptionV3(input_shape=(224,224,3),weights=None,include_top=False) 
+        base_model=InceptionV3(input_shape=(224,224,3),weights='imagenet',include_top=False) 
         x = base_model.output
         x = Flatten()(x)
-        x = Dense(2048)(x)
-        x = LeakyReLU()(x)
+        x = Dense(2048,activation='sigmoid')(x)
         model = Model(inputs=base_model.input,outputs=x)
         return model
     
     def createDiscriminator(self):
         input1 = Input(shape=4096)
-        x = Dense(1024)(input1)
-        x = LeakyReLU()(x)
-        x = Dense(512)(x)
-        x = LeakyReLU()(x)
-        x = Dense(256)(x)
-        x = LeakyReLU()(x)
+        x = Dense(1024,activation='sigmoid')(input1)
+        x = Dense(512,activation='sigmoid')(x)
+        x = Dense(256,activation='sigmoid')(x)
         target = Dense(1,activation='sigmoid')(x)
         model = Model(inputs=input1,outputs=target)
         return model
@@ -86,7 +83,7 @@ class TmClassify:
     def gen_data(self,path):
      
         img_pil = Image.open(path).convert('RGB')
-        # img_pil.save("test.jpg")
+        img_pil.save('test.jpg')
         pad_top = int(abs(np.random.uniform(0,self.pad_param)))
         pad_bottom = int(abs(np.random.uniform(0,self.pad_param)))
         pad_left = int(abs(np.random.uniform(0,self.pad_param)))
@@ -141,63 +138,7 @@ class TmClassify:
                     batch_img2 = np.zeros((batch_size,self.input_shape[0],self.input_shape[1],3))
                     batch_target = np.zeros(batch_size)
                     
-                    # for batch_index in range(batch_size//5):
-                    #     #print(batch_index)
-                       
-                    #     while True:
-                    #         try:
-                    #             random_permu = np.random.permutation(len(sdir))
-                    #             filelist = glob2.glob(sdir[random_permu[batch_index]]+'/*')
-                    #             file_permu = np.random.permutation(len(filelist))
-                    #             img1 = self.gen_data(filelist[file_permu[0]])
-                    #             img2 = self.gen_data(filelist[file_permu[1]])
-                    #             batch_target[batch_index] = 1
-                    #             batch_img1[batch_index] = img1
-                    #             batch_img2[batch_index] = img2
-                    #         except:
-                    #             continue
-                    #         break
-                        
-                    # for batch_index in range(batch_size//5,2*batch_size//5):
-                    #     #print(batch_index)
-                        
-                    #     while True:
-                    #         try:
-                    #             random_permu = np.random.permutation(len(sdir))
-                    #             rand_2k = np.random.permutation(len(path2K))
-                    #             fp = os.path.join(r'D:\datasets\LSLOGO\Logo-2K+',path2K[rand_2k[0]])
-                    #             filelist1 = glob2.glob(sdir[random_permu[batch_index]]+'/*')
-                    #             filelist2 = glob2.glob(sdir[random_permu[-1-batch_index]]+'/*')
-                    #             file_permu1 = np.random.permutation(len(filelist1))
-                    #             file_permu2 = np.random.permutation(len(filelist2)) 
-                    #             img1 = self.gen_data(filelist1[file_permu1[0]])
-                    #             img2 = self.gen_data(filelist2[file_permu2[0]])
-                    #             batch_target[batch_index] = 0
-                    #             batch_img1[batch_index] = img1
-                    #             batch_img2[batch_index] = img2
-                    #         except:
-                    #             continue
-                    #         break
-                       
-                    # for batch_index in range(2*batch_size//5,3*batch_size//5):
-                    #     #print(batch_index)
-                    #      while True:
-                    #         try:
-                    #             random_permu = np.random.permutation(len(sdir))
-                    #             rand_2k = np.random.permutation(len(path2K))
-                    #             fp = os.path.join(r'D:\datasets\LSLOGO\Logo-2K+',path2K[rand_2k[0]])
-                    #             filelist1 = glob2.glob(sdir[random_permu[batch_index]]+'/*')
-                    #             file_permu1 = np.random.permutation(len(filelist1))
-                    #             img1 = self.gen_data(filelist1[file_permu1[0]])
-                    #             img2 = self.gen_data(fp)
-                    #             batch_target[batch_index] = 0
-                    #             batch_img1[batch_index] = img1
-                    #             batch_img2[batch_index] = img2
-                    #         except:
-                    #             continue
-                    #         break
-                    
-                    for batch_index in range(1*batch_size//5,batch_size//2):
+                    for batch_index in range(0,batch_size//4):
                         #print(batch_index)
                         while True:
                             try:
@@ -215,7 +156,25 @@ class TmClassify:
                                 continue
                             break
                         
-                    for batch_index in range(batch_size//2,batch_size):
+                    for batch_index in range(batch_size//4,2*batch_size//4):
+                        #print(batch_index)
+                        while True:
+                            try:
+                                rand_2k = np.random.permutation(len(path2K))
+                                fp = os.path.join(r'D:\datasets\LSLOGO\Logo-2K+',path2K[rand_2k[0]])
+                                fp_par = Path(fp).parents[0]
+                                filedir = glob2.glob(str(fp_par) + '/*')
+                                random_permu = np.random.permutation(len(filedir))
+                                img1 = self.gen_data(filedir[random_permu[0]])
+                                img2 = self.gen_data(filedir[random_permu[0]])
+                                batch_target[batch_index] = 1
+                                batch_img1[batch_index] = img1
+                                batch_img2[batch_index] = img2
+                            except:
+                                continue
+                            break
+                        
+                    for batch_index in range(2*batch_size//4,3*batch_size//4):
                         #print(batch_index)
                         while True:
                             try:
@@ -225,6 +184,8 @@ class TmClassify:
                                     rand_2k = np.random.permutation(len(path2K))
                                     rootpath1 = path2K[rand_2k[0]].split('/')[1]
                                     rootpath2 = path2K[rand_2k[-1]].split('/')[1]
+                                    # print(rootpath1)
+                                    # print(rootpath2)
                                     fp1 = os.path.join(r'D:\datasets\LSLOGO\Logo-2K+',path2K[rand_2k[0]])
                                     fp2 = os.path.join(r'D:\datasets\LSLOGO\Logo-2K+',path2K[rand_2k[-1]])
                                     img1 = self.gen_data(fp1)
@@ -236,7 +197,30 @@ class TmClassify:
                             except:
                                 continue
                             break
-                       
+                      
+                    for batch_index in range(3*batch_size//4,4*batch_size//4):
+                        #print(batch_index)
+                        while True:
+                            try:
+                                rootpath1 = 0
+                                rootpath2 = 0
+                                while rootpath1==rootpath2:
+                                    rand_2k = np.random.permutation(len(path2K))
+                                    rootpath1 = path2K[rand_2k[0]].split('/')[0]
+                                    rootpath2 = path2K[rand_2k[-1]].split('/')[0]
+                                    # print(rootpath1)
+                                    # print(rootpath2)
+                                    fp1 = os.path.join(r'D:\datasets\LSLOGO\Logo-2K+',path2K[rand_2k[0]])
+                                    fp2 = os.path.join(r'D:\datasets\LSLOGO\Logo-2K+',path2K[rand_2k[-1]])
+                                    img1 = self.gen_data(fp1)
+                                    img2 = self.gen_data(fp2)
+                                    batch_target[batch_index] = 0
+                                    batch_img1[batch_index] = img1
+                                    batch_img2[batch_index] = img2
+                                    pass
+                            except:
+                                continue
+                            break
                         
                     train_loss = self.model.train_on_batch([batch_img1,batch_img2],batch_target)
                     with train_summary_writer.as_default():
@@ -248,17 +232,17 @@ class TmClassify:
                     
                     if(step_index%viz_interval==0):
                         print('ok',end='\r')
-                        self.model.layers[2].save_weights('2KencoderWeightsV1.h5')
-                        self.model.layers[4].save_weights('2KdiscriminatorWeightsV1.h5')
+                        self.model.layers[2].save_weights('2KencoderWeightsV3.h5')
+                        self.model.layers[4].save_weights('2KdiscriminatorWeightsV3.h5')
                         # self.model.save('DIPMatch.h5')
                     
 if __name__ == "__main__":
     TC = TmClassify()
     # TC.encoder = load_model('DIPEncoder.h5')
     # TC.discriminator = load_model('DIPdiscriminator.h5')
-    TC.encoder.load_weights('DIPencoderWeightsV9.h5')
-    TC.discriminator.load_weights('DIPdiscriminatorWeightsV9.h5')
+    # TC.encoder.load_weights('2KencoderWeightsV2.h5')
+    # TC.discriminator.load_weights('2KdiscriminatorWeightsV2.h5')
     # TC.model = load_model(r'DIPMatchV9.h5')
     # TC.model.layers[2].save_weights('DIPencoderWeightsV1.h5')
     # TC.model.layers[4].save_weights('DIPdiscriminatorWeightsV1.h5')
-    TC.train(1,10000,50,200)
+    TC.train(1,10000,20,200)

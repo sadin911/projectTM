@@ -14,10 +14,10 @@ class gendata():
     def __init__(self):
         # self.sx = 1.2
         # self.sy = 1.2
-        self.pad_param = 20
+        self.pad_param = 5
         self.rotate_degree_param = 5
-        self.img_rows = 128
-        self.img_cols = 128
+        self.img_rows = 256
+        self.img_cols = 256
         self.channels = 3
         self.input_shape = (self.img_rows, self.img_cols, self.channels)
     
