@@ -72,9 +72,9 @@ class DocScanner():
         op = Adam(0.0002,0.5)
         
         # self.model.save('./tfModels/corner')
-        self.model.compile(loss=['mse'],
+        self.model.compile(loss=['binary_crossentropy'],
                               optimizer=op,
-                              metrics=[tf.keras.metrics.MeanSquaredError()])
+                              metrics='accuracy')
         
         
         if tf.test.gpu_device_name():
@@ -104,51 +104,57 @@ class DocScanner():
         x = Conv2D(64, (3, 3), activation='relu', padding='same')(x)
         x = UpSampling2D((2, 2))(x)
         x = BatchNormalization(momentum = 0.8)(x)
-        x = Dropout(0.2)(x)
+        # x = Dropout(0.2)(x)
         x = Conv2D(32, (3, 3), activation='relu', padding='same')(x)
         x = UpSampling2D((2, 2))(x)
         x = BatchNormalization(momentum = 0.8)(x)
         x = Conv2D(16, (3, 3), activation='relu', padding='same')(x)
         x = UpSampling2D((2, 2))(x)
         x = BatchNormalization(momentum = 0.8)(x)
-        x = Dropout(0.2)(x)
+        # x = Dropout(0.2)(x)
         x = Conv2D(3, (3, 3), activation='relu', padding='same')(x)
         x = UpSampling2D((2, 2))(x)
         x = BatchNormalization(momentum = 0.8)(x)
-        x = Dropout(0.2)(x)
-        decoded = Conv2D(3, (3, 3), activation='tanh', padding='same')(x)
+        # x = Dropout(0.2)(x)
+        decoded = Conv2D(3, (3, 3), activation='sigmoid', padding='same')(x)
         model = Model(inputs=encoded,outputs=decoded)
         return model
     
     def gen_data(self,path):
      
         img_pil = Image.open(path).convert('RGB')
-        # img_pil.save('test.jpg')
-        img_in = np.asarray(img_pil)/127.5-1
+        img_in = np.asarray(img_pil)/255
+        enhancer_color = ImageEnhance.Color(img_pil)
+        color_factor = np.max([0,1-abs(np.random.normal(loc=0, scale=0.5, size=None))])
+        img_pil = enhancer_color.enhance(color_factor)
+        
+        enhancer_color = ImageEnhance.Color(img_pil)
+        
         pad_top = int(abs(np.random.uniform(0,self.pad_param)))
         pad_bottom = int(abs(np.random.uniform(0,self.pad_param)))
         pad_left = int(abs(np.random.uniform(0,self.pad_param)))
         pad_right = int(abs(np.random.uniform(0,self.pad_param)))
         rotate_param = np.random.uniform(0,self.rotate_degree_param)
         
-        flip_flag = np.random.randint(0,1)
-        mirror_flag = np.random.randint(0,1)
+        # flip_flag = np.random.randint(0,2)
+        # print(flip_flag)
+        # mirror_flag = np.random.randint(0,2)
+        # print(mirror_flag)
         
-        
-        if(flip_flag):
-            img_pil = ImageOps.flip(img_pil)
-        if(mirror_flag):
-            img_pil = ImageOps.mirror(img_pil)
+        # if(flip_flag==1):
+        #     img_pil = ImageOps.flip(img_pil)
+        # if(mirror_flag==1):
+        #     img_pil = ImageOps.mirror(img_pil)
         
         blur_rad = np.random.normal(loc=0.0, scale=1, size=None)
         img_pil = img_pil.filter(ImageFilter.GaussianBlur(blur_rad))
         
         enhancer_contrat = ImageEnhance.Contrast(img_pil)
         enhancer_brightness = ImageEnhance.Brightness(img_pil)
-        enhancer_color = ImageEnhance.Color(img_pil)
-        brightness_factor = np.random.normal(loc=1.0, scale=0.5, size=None)
-        contrast_factor = np.random.normal(loc=1.0, scale=0.5, size=None)
-        color_factor = np.max([0,1-abs(np.random.normal(loc=0, scale=0.5, size=None))])
+        
+        brightness_factor = np.random.normal(loc=1.0, scale=0.25, size=None)
+        contrast_factor = np.random.normal(loc=1.0, scale=0.25, size=None)
+        
 
         translate_factor_hor = np.random.normal(loc=0, scale=5, size=None)
         translate_factor_ver = np.random.normal(loc=0, scale=5, size=None)
@@ -156,7 +162,7 @@ class DocScanner():
 
         img_pil = enhancer_contrat.enhance(contrast_factor)
         img_pil = enhancer_brightness.enhance(brightness_factor)
-        img_pil = enhancer_color.enhance(color_factor)
+        
         img_pil = ImageChops.offset(img_pil, int(translate_factor_hor), int(translate_factor_ver))
         
         img_pil = img_pil.rotate(rotate_param,resample = Image.BILINEAR,expand = True, fillcolor = (255,255,255))
@@ -164,7 +170,7 @@ class DocScanner():
         img = np.asarray(img_pil)
         img = cv2.copyMakeBorder(img, pad_top, pad_bottom, pad_left, pad_right, cv2.BORDER_CONSTANT,value=(255,255,255))
         img = cv2.resize(img, dsize=(256,256))
-        img = img/127.5 - 1
+        img = img/255
         return img_in, img
     
     def train(self,start_epoch, max_epoch, batch_size, viz_interval):
@@ -187,7 +193,8 @@ class DocScanner():
                 
                 train_loss = self.model.train_on_batch(batch_img,batch_target)
                 with train_summary_writer.as_default():
-                       tf.summary.scalar('loss', train_loss[0], step=step)
+                       tf.summary.scalar('loss', abs(train_loss[0]), step=step)
+                       tf.summary.scalar('accuracy', abs(train_loss[1]), step=step)
                        step = step + 1 
                
                 
@@ -198,27 +205,27 @@ class DocScanner():
                 # epoch_loss.append(loss)
                 
                 if(step_index % viz_interval == 0): 
-                    rand_f = np.random.randint(0,len(path2K))
-                    target,img_viz = self.gen_data(path2K[rand_f])
-                    indput_data = np.expand_dims(img_viz, axis = 0)
-                    predict_mask = self.model.predict(indput_data)[0]
-                    test_raw =  Image.fromarray(predict_mask.astype('uint8'))
-                    target = (target+1)*127.5
-                    img_viz = (img_viz+1)*127.5
-                    predict_mask = (predict_mask+1)*127.5
-                    test_img = Image.fromarray(predict_mask.astype('uint8'))
-                    input_img =  Image.fromarray(img_viz.astype('uint8'))
-                    target_img =  Image.fromarray(target.astype('uint8'))
+                    # rand_f = np.random.randint(0,len(path2K))
+                    # target,img_viz = self.gen_data(path2K[rand_f])
+                    # indput_data = np.expand_dims(img_viz, axis = 0)
+                    # predict_mask = self.model.predict(indput_data)[0]
+                    # test_raw =  Image.fromarray(predict_mask.astype('uint8'))
+                    # target = (target+1)*127.5
+                    # img_viz = (img_viz+1)*127.5
+                    # predict_mask = (predict_mask+1)*127.5
+                    # test_img = Image.fromarray(predict_mask.astype('uint8'))
+                    # input_img =  Image.fromarray(img_viz.astype('uint8'))
+                    # target_img =  Image.fromarray(target.astype('uint8'))
                     self.model.layers[1].save_weights('encoder.weights.h5')
-                    self.model.save_weights('cnnATECSmallDensefix.weights.h5')
-                    self.model.save('cnnATECSmallDensefix.h5')
+                    self.model.save_weights('cnnATECSmallDense.weights.h5')
+                    self.model.save('cnnATECSmallDense.h5')
                     try:
                         with train_summary_writer.as_default():
                             images = np.reshape(batch_img[0:5], (-1, 256, 256, 3))
                             images = images
                             mask = self.model.predict(images)
-                            tf.summary.image("5 input", ((images+1)*127.5).astype('uint8'), max_outputs=5, step=step)
-                            tf.summary.image("5 output", ((mask+1)*127.5).astype('uint8'), max_outputs=5, step=step)
+                            tf.summary.image("5 input", ((images)*255).astype('uint8'), max_outputs=5, step=step)
+                            tf.summary.image("5 output", ((mask)*255).astype('uint8'), max_outputs=5, step=step)
                             
                             # b_mask = (mask[0]+1)*127.5
                             # b_img = Image.fromarray(b_mask.astype('uint8'))
@@ -227,10 +234,10 @@ class DocScanner():
                             # b_img = Image.fromarray(b_mask.astype('uint8'))
                             # b_img.save('testMask1.jpg')
                             
-                        input_img.save("viz.jpg")
-                        test_img.save("test_img.jpg")
-                        target_img.save("target_img.jpg")
-                        test_raw.save("test_raw.jpg")
+                        # input_img.save("viz.jpg")
+                        # test_img.save("test_img.jpg")
+                        # target_img.save("target_img.jpg")
+                        # test_raw.save("test_raw.jpg")
                         
                 
                     except IOError as e:
@@ -240,5 +247,5 @@ class DocScanner():
     
 if __name__ == '__main__':
     doc = DocScanner()
-    doc.model.load_weights('cnnATECSmallDensefix.weights.h5')
+    doc.model.load_weights('cnnATECSmallDense.weights.h5')
     doc.train(1,10000000,50,100)

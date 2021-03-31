@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Mar 25 17:06:56 2021
+Created on Tue Mar 30 09:16:46 2021
 
 @author: chonlatid.d
 """
@@ -19,8 +19,9 @@ from PIL import Image,ImageDraw,ImageFilter,ImageEnhance,ImageOps,ImageChops
 import numpy as np
 import cv2
 import shutil
+from tensorflow.python.keras.layers.convolutional import UpSampling2D, Conv2D
 from tensorflow.python.keras.layers.merge import add, concatenate,Dot,Multiply
-from tensorflow.python.keras.layers import Input, Dense, Activation , LeakyReLU, Flatten, BatchNormalization, Dropout,LeakyReLU
+from tensorflow.python.keras.layers import Input, Dense, Activation , LeakyReLU, Flatten, BatchNormalization, Dropout, LeakyReLU, Reshape
 from tensorflow.keras.optimizers import Adam
 import pandas as pd
 from sklearn.preprocessing import normalize
@@ -33,7 +34,7 @@ types = ('*.bmp', '*.jpg' ,'.*gif' ,'*.png' , '*.tif', 'jpeg')
 pathlist = []
 for files in types:
     pathlist.extend(glob2.glob(os.path.join(path_input, files)))
-sdir = glob2.glob(r"D:/project/projectTM/src/imageGroupALLV2/*/")
+sdir = glob2.glob(r"D:/project/projectTM/src/imageGroupALLV3/*/")
 current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 os.makedirs('logs',exist_ok=True)
 shutil.rmtree('logs')
@@ -43,45 +44,80 @@ train_summary_writer = tf.summary.create_file_writer(train_log_dir)
 num_batch = 5
 class TmClassify:
     def __init__(self):
-        self.input_shape = (224,224)
-        self.filter_count = 32
-        self.kernel_size = (3, 3)
+        self.input_shape = (256,256)
         self.encoder = self.createEncoder()
-        Input1 = Input(shape=(224,224,3))
-        Input2 = Input(shape=(224,224,3))
+        Input1 = Input(shape=(256,256,3))
+        Input2 = Input(shape=(256,256,3))
         # target = Dot(axes=1)([self.encoder(Input1), self.encoder(Input2)])
         # x = Multiply()([self.encoder(Input1), self.encoder(Input2)])
         x = concatenate(inputs = [self.encoder(Input1), self.encoder(Input2)])
         self.discriminator = self.createDiscriminator()
         y = self.discriminator(x)
-        self.model = Model(inputs=[Input1,Input2],outputs=y)
-        self.model.summary()
-        # op = Adam(lr=0.002, beta_1=0.5, beta_2=0.999, epsilon=1e-08, decay=0.0)
+        self.modelDisc = Model(inputs=[Input1,Input2],outputs=y)
+        self.modelDisc.summary()
+        # op = Adam(lr=0.002, beta_1=0.5, beta_2=0.999, epsilon=1e-08, decay=0.00001)
         op = Adam(0.0002,0.5)
-        self.model.compile(optimizer=op,loss='binary_crossentropy',metrics=['accuracy'])
+        self.modelDisc.compile(optimizer=op,loss='binary_crossentropy',metrics=['accuracy'])
+        
+        self.decoder = self.createDecoder()
+        en = self.encoder(Input1)
+        de = self.decoder(en)
+        self.modelATEC = Model(inputs=[Input1],outputs=de)
+        self.modelATEC.summary()
+        # self.modelATEC.compile(optimizer=op,loss='binary_crossentropy', metrics=['accuracy'])
+        
+        self.modelAll = Model(inputs=[Input1,Input2],outputs=[y,de])
+        self.modelAll.summary()
+        self.modelAll.compile(optimizer=op,loss=['binary_crossentropy','mse'], metrics=['accuracy'],loss_weights=[1,1])
+        dot_img_file = 'modelATEC.png'
+        tf.keras.utils.plot_model(self.modelAll, to_file=dot_img_file, show_shapes=True)
         self.pad_param = 5
-        self.rotate_degree_param = 5
+        self.rotate_degree_param = 180
         
     def createEncoder(self):
-        base_model=InceptionV3(input_shape=(224,224,3),weights=None, include_top=False) 
+        base_model=InceptionV3(input_shape=(256,256,3),weights=None, include_top=False) 
         x = base_model.output
         x = Flatten()(x)
-        x = Dense(4096,activation='sigmoid')(x)
-        model = Model(inputs=base_model.input,outputs=x)
+        x = Dense(2048,activation='sigmoid')(x)
+        model = Model(inputs=base_model.input,outputs=x,name='Encoder')
         return model
-    
+    def createEncoderExtend(self):
+        input1 = Input(shape=2048)
+        x = Dense(2048,activation='relu')(input1)
     def createDiscriminator(self):
-        input1 = Input(shape=8192)
-        x = Dense(1024,activation='sigmoid')(input1)
+        input1 = Input(shape=4096)
+        x = Dense(1024,activation='relu')(input1)
         x = Dropout(0.1)(x)
-        x = Dense(512,activation='sigmoid')(x)
+        x = Dense(512,activation='relu')(x)
         x = Dropout(0.1)(x)
-        x = Dense(256,activation='sigmoid')(x)
+        x = Dense(256,activation='relu')(x)
         x = Dropout(0.1)(x)
         target = Dense(1,activation='sigmoid')(x)
-        model = Model(inputs=input1,outputs=target)
+        model = Model(inputs=input1,outputs=target,name='Discriminator')
         return model
     
+    def createDecoder(self):
+        encoded = Input(shape=2048)
+        x = Dense(2048)(encoded)
+        x = Reshape((8,8,32))(x)
+        x = Conv2D(128, (3, 3), activation='relu', padding='same')(x)
+        x = UpSampling2D((2, 2))(x)
+        x = BatchNormalization()(x)
+        x = Conv2D(64, (3, 3), activation='relu', padding='same')(x)
+        x = UpSampling2D((2, 2))(x)
+        x = BatchNormalization()(x)
+        x = Conv2D(32, (3, 3), activation='relu', padding='same')(x)
+        x = UpSampling2D((2, 2))(x)
+        x = BatchNormalization()(x)
+        x = Conv2D(16, (3, 3), activation='relu', padding='same')(x)
+        x = UpSampling2D((2, 2))(x)
+        x = BatchNormalization()(x)
+        x = Conv2D(3, (3, 3), activation='relu', padding='same')(x)
+        x = UpSampling2D((2, 2))(x)
+        x = BatchNormalization()(x)
+        decoded = Conv2D(3, (3, 3), activation='tanh', padding='same')(x)
+        model = Model(inputs=encoded,outputs=decoded,name='Decoder')
+        return model
     
     def gen_data(self,path):
      
@@ -102,15 +138,15 @@ class TmClassify:
         if(mirror_flag):
             img_pil = ImageOps.mirror(img_pil)
         
-        blur_rad = np.random.normal(loc=0.0, scale=1, size=None)
+        blur_rad = np.random.normal(loc=0.0, scale=2, size=None)
         img_pil = img_pil.filter(ImageFilter.GaussianBlur(blur_rad))
         
         enhancer_contrat = ImageEnhance.Contrast(img_pil)
         enhancer_brightness = ImageEnhance.Brightness(img_pil)
         enhancer_color = ImageEnhance.Color(img_pil)
-        brightness_factor = np.random.normal(loc=1.0, scale=0.5, size=None)
-        contrast_factor = np.random.normal(loc=1.0, scale=0.5, size=None)
-        color_factor = np.max([0,1-abs(np.random.normal(loc=0, scale=0.5, size=None))])
+        brightness_factor = np.random.normal(loc=1.0, scale=2.5, size=None)
+        contrast_factor = np.random.normal(loc=1.0, scale=2.5, size=None)
+        color_factor = np.max([0,1-abs(np.random.normal(loc=0, scale=1, size=None))])
 
         translate_factor_hor = np.random.normal(loc=0, scale=5, size=None)
         translate_factor_ver = np.random.normal(loc=0, scale=5, size=None)
@@ -121,12 +157,12 @@ class TmClassify:
         img_pil = enhancer_color.enhance(color_factor)
         img_pil = ImageChops.offset(img_pil, int(translate_factor_hor), int(translate_factor_ver))
         
-        img_pil = img_pil.rotate(rotate_param,resample = Image.BILINEAR,expand = True, fillcolor = (255))
+        img_pil = img_pil.rotate(rotate_param,resample = Image.BILINEAR,expand = True, fillcolor = (255,255,255))
         
         img = np.asarray(img_pil)
         img = cv2.copyMakeBorder(img, pad_top, pad_bottom, pad_left, pad_right, cv2.BORDER_CONSTANT,value=(255,255,255))
         img= cv2.resize(img, dsize=(self.input_shape))
-        img = img/127.5 - 1
+        img = img/127.5-1
         return img
     
     def train(self,start_epoch, max_epoch, batch_size, viz_interval):
@@ -141,7 +177,7 @@ class TmClassify:
                     batch_img2 = np.zeros((batch_size,self.input_shape[0],self.input_shape[1],3))
                     batch_target = np.zeros(batch_size)
                     # print("1")
-                    # Same Class
+                    # Same Pic
                     for batch_index in range(0,batch_size//num_batch):
                         #print(batch_index)
                         while True:
@@ -152,7 +188,7 @@ class TmClassify:
                                 filedir = glob2.glob(str(fp_par) + '/*')
                                 random_permu = np.random.permutation(len(filedir))
                                 img1 = self.gen_data(filedir[random_permu[0]])
-                                img2 = self.gen_data(filedir[random_permu[1]])
+                                img2 = self.gen_data(filedir[random_permu[0]])
                                 batch_target[batch_index] = 1
                                 batch_img1[batch_index] = img1
                                 batch_img2[batch_index] = img2
@@ -206,7 +242,7 @@ class TmClassify:
                                 continue
                             break
                     # print("4")  
-                    # same class 2K
+                    # same class dip
                     for batch_index in range(3*batch_size//num_batch,4*batch_size//num_batch):
                         #print(batch_index)
                         while True:
@@ -224,7 +260,7 @@ class TmClassify:
                                 continue
                             break
                     # print("5")   
-                    # dif class 2K
+                    # dif class dip
                     for batch_index in range(4*batch_size//num_batch,5*batch_size//num_batch):
                         #print(batch_index)
                         while True:
@@ -246,27 +282,44 @@ class TmClassify:
                                 continue
                             break
                         
-                    train_loss = self.model.train_on_batch([batch_img1,batch_img2],batch_target)
+                    # train_loss_disc = self.modelDisc.train_on_batch([batch_img1,batch_img2],batch_target)
+                    # train_loss_atec = self.modelATEC.train_on_batch([batch_img1],batch_img1)
+                    train_loss = self.modelAll.train_on_batch([batch_img1,batch_img2],[batch_target,batch_img1])
+                    
                     with train_summary_writer.as_default():
-                        tf.summary.scalar('loss', train_loss[0], step=step)
-                        tf.summary.scalar('accuracy', train_loss[1], step=step)
+                        tf.summary.scalar('losstotal', train_loss[0], step=step)
+                        tf.summary.scalar('lossdisc', train_loss[1], step=step)
+                        tf.summary.scalar('lossatec', train_loss[2], step=step)
+                        tf.summary.scalar('accuracydisc', train_loss[3], step=step)
+                        tf.summary.scalar('accuracyatec', train_loss[4], step=step)
                         step = step + 1 
                     # train_summary_writer = tf.summary.create_file_writer(train_log_dir)
-                    print('\r epoch ' + str(epoch) + ' / ' + str(max_epoch) + '   ' + 'step ' + str(step_index) + ' / ' + str(max_step) + '    loss = ' + str(train_loss),end='\r')
+                    print('\r epoch ' + str(epoch) + ' / ' + str(max_epoch) + '   ' + 'step ' + str(step_index) + ' / ' + str(max_step) + '=' + str(train_loss),end='\r')
                     
                     if(step_index%viz_interval==0):
                         print('ok',end='\r')
-                        self.model.layers[2].save_weights('2KencoderWeightsV4.h5')
-                        self.model.layers[4].save_weights('2KdiscriminatorWeightsV4.h5')
-                        # self.model.save('DIPMatch.h5')
+                        self.modelAll.layers[2].save_weights('ATencoder.Weights.h5')
+                        self.modelAll.layers[4].save_weights('ATdiscriminator.Weights.h5')
+                        self.modelAll.layers[5].save_weights('ATdecoder.Weights.h5')
+                        with train_summary_writer.as_default():
+                            images1 = np.reshape(batch_img1, (-1, 256, 256, 3))
+                            images2 = np.reshape(batch_img2, (-1, 256, 256, 3))
+                            
+                            mask1 = self.modelATEC.predict([images1])
+                            mask2 = self.modelATEC.predict([images2])
+                            tf.summary.image("5 input1", ((images1+1)*127.5).astype('uint8'), max_outputs=20, step=step)
+                            tf.summary.image("5 output1", ((mask1+1)*127.5).astype('uint8'), max_outputs=20, step=step)
+                            tf.summary.image("5 input2", ((images2+1)*127.5).astype('uint8'), max_outputs=20, step=step)
+                            tf.summary.image("5 output2", ((mask2+1)*127.5).astype('uint8'), max_outputs=20, step=step)
                     
 if __name__ == "__main__":
     TC = TmClassify()
     # TC.encoder = load_model('DIPEncoder.h5')
     # TC.discriminator = load_model('DIPdiscriminator.h5')
-    # TC.encoder.load_weights('2KencoderWeightsV2.h5')
-    # TC.discriminator.load_weights('2KdiscriminatorWeightsV2.h5')
+    # TC.encoder.load_weights('ATencoder.Weights.h5')
+    # TC.discriminator.load_weights('ATdiscriminator.Weights.h5')
+    # TC.decoder.load_weights('ATdecoder.Weights.h5')
     # TC.model = load_model(r'DIPMatchV9.h5')
     # TC.model.layers[2].save_weights('DIPencoderWeightsV1.h5')
     # TC.model.layers[4].save_weights('DIPdiscriminatorWeightsV1.h5')
-    TC.train(1,10000,30,200)
+    TC.train(1,10000,20,50)

@@ -18,7 +18,7 @@ from io import BytesIO
 df = pd.read_csv(r"C:\Users\chonlatid.d\Downloads\DIP_PIC_DATA\drive-download-20210311T064932Z-001\dip_tr_like.csv",sep=";")
 df_file = pd.read_csv(r"C:\Users\chonlatid.d\Downloads\DIP_PIC_DATA\drive-download-20210311T064932Z-001\dip_tr_file.csv",sep=";")
 df_drop = df[pd.notnull(df['COND_PIC'])]
-
+df_drop = df_drop.loc[lambda x:x.COND_WORD.isnull()]
 TN_List = df_drop['TR_NO'].tolist()
 TR_List = df_drop['TR_NO_R'].tolist()
 
@@ -32,8 +32,8 @@ def progressBar(current, total, barLength = 20):
     spaces  = ' ' * (barLength - len(arrow))
     print('Progress: [%s%s] %d %%' % (arrow, spaces, percent), end='\r',flush=True)
     
-group_path = 'imageGroupALLV2'
-sep_path = 'ImagesALLV2'
+group_path = 'imageGroupALLV3'
+sep_path = 'ImagesALLV3'
 if os.path.exists(group_path):
     shutil.rmtree(group_path)
 if os.path.exists(sep_path):
