@@ -40,7 +40,7 @@ if os.path.exists(dirpath):
 
 path2K = [r'D:/datasets/LSLOGO/Logo-2K+/' + x for x in path2K]
 pathlist.extend(glob2.glob(path_input))
-pathref.extend(glob2.glob(path_ref))
+# pathref.extend(glob2.glob(path_ref))
     
 # pathref.extend(path2K)
 
@@ -52,27 +52,34 @@ def progressBar(current, total, barLength = 20):
     print('Progress: [%s%s] %d %%' % (arrow, spaces, percent), end='\r',flush=True)
 
 def createEncoder():
-    base_model=InceptionV3(input_shape=(224,224,3),weights=None,include_top=False) 
+    base_model=InceptionV3(input_shape=(224,224,3),weights=None, include_top=False) 
     x = base_model.output
     x = Flatten()(x)
+    x = BatchNormalization(momentum=0.8)(x)
     x = Dense(2048,activation='sigmoid')(x)
-    model = Model(inputs=base_model.input,outputs=x)
+    model = Model(inputs=base_model.input,outputs=x,name='Encoder')
     return model
     
 def createDiscriminator():
     input1 = Input(shape=4096)
     x = Dense(1024,activation='relu')(input1)
+    x = BatchNormalization(momentum=0.8)(x)
+    x = Dropout(0.1)(x)
     x = Dense(512,activation='relu')(x)
-    x = Dense(256,activation='relu')(x)
+    x = BatchNormalization(momentum=0.8)(x)
+    x = Dropout(0.1)(x)
+    x = Dense(224,activation='relu')(x)
+    x = BatchNormalization(momentum=0.8)(x)
+    x = Dropout(0.1)(x)
     target = Dense(1,activation='sigmoid')(x)
-    model = Model(inputs=input1,outputs=target)
+    model = Model(inputs=input1,outputs=target,name='Discriminator')
     return model
 
 model = createEncoder()
 model_discriminator = createDiscriminator()
 
-model_discriminator.load_weights(r'train/DIPdiscriminatorWeightsV9.h5')
-model.load_weights(r'train/DIPencoderWeightsV9.h5')
+model_discriminator.load_weights(r'train/DCdiscriminator.Weights.h5')
+model.load_weights(r'train/DCencoder.Weights.h5')
 
 feature = []
 feature_ref = []

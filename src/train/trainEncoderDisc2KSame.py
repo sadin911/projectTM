@@ -43,7 +43,7 @@ class TmClassify:
         self.input_shape = (224,224)
         self.encoder = self.createEncoder()
         self.encoder.summary()
-        self.encoderextend = self.createEncoderExtend()
+        
         Input1 = Input(shape=(224,224,3))
         Input2 = Input(shape=(224,224,3))
         # target = Dot(axes=1)([self.encoder(Input1), self.encoder(Input2)])
@@ -54,7 +54,7 @@ class TmClassify:
         self.modelDisc = Model(inputs=[Input1,Input2],outputs=y)
         self.modelDisc.summary()
         # op = Adam(lr=0.002, beta_1=0.5, beta_2=0.999, epsilon=1e-08, decay=0.00001)
-        op = Adam(0.0001)
+        op = Adam(0.00001)
         self.modelDisc.compile(optimizer=op,loss='binary_crossentropy',metrics=['accuracy'])
 
         dot_img_file = 'modelDisc.png'
@@ -71,12 +71,6 @@ class TmClassify:
         model = Model(inputs=base_model.input,outputs=x,name='Encoder')
         return model
     
-    def createEncoderExtend(self):
-        input1 = Input(shape=2048)
-        x = Dense(2048,activation='sigmoid')(input1)
-        model = Model(inputs=input1,outputs=x,name='EncoderExtend')
-        return model
-    
     def createDiscriminator(self):
         input1 = Input(shape=4096)
         x = Dense(1024,activation='relu')(input1)
@@ -90,29 +84,6 @@ class TmClassify:
         x = Dropout(0.1)(x)
         target = Dense(1,activation='sigmoid')(x)
         model = Model(inputs=input1,outputs=target,name='Discriminator')
-        return model
-    
-    def createDecoder(self):
-        encoded = Input(shape=2048)
-        x = Dense(2048)(encoded)
-        x = Reshape((8,8,32))(x)
-        x = Conv2D(128, (3, 3), activation='relu', padding='same')(x)
-        x = UpSampling2D((2, 2))(x)
-        x = BatchNormalization()(x)
-        x = Conv2D(64, (3, 3), activation='relu', padding='same')(x)
-        x = UpSampling2D((2, 2))(x)
-        x = BatchNormalization()(x)
-        x = Conv2D(32, (3, 3), activation='relu', padding='same')(x)
-        x = UpSampling2D((2, 2))(x)
-        x = BatchNormalization()(x)
-        x = Conv2D(16, (3, 3), activation='relu', padding='same')(x)
-        x = UpSampling2D((2, 2))(x)
-        x = BatchNormalization()(x)
-        x = Conv2D(3, (3, 3), activation='relu', padding='same')(x)
-        x = UpSampling2D((2, 2))(x)
-        x = BatchNormalization()(x)
-        decoded = Conv2D(3, (3, 3), activation='tanh', padding='same')(x)
-        model = Model(inputs=encoded,outputs=decoded,name='Decoder')
         return model
     
     def gen_data(self,path):
@@ -173,7 +144,7 @@ class TmClassify:
                     batch_img2 = np.zeros((batch_size,self.input_shape[0],self.input_shape[1],3))
                     batch_imgTarget = np.zeros((batch_size,256,256,3))
                     batch_target = np.zeros(batch_size)
-                    print("1")
+                    # print("1")
                     # Same Pic
                     for batch_index in range(0,batch_size//num_batch):
                         #print(batch_index)
@@ -194,7 +165,7 @@ class TmClassify:
                             except:
                                 continue
                             break
-                    print("2")
+                    # print("2")
                     # Same Pic
                     for batch_index in range(batch_size//num_batch,2*batch_size//num_batch):
                         #print(batch_index)
@@ -215,35 +186,9 @@ class TmClassify:
                             except:
                                 continue
                             break
-                    print("3")
-                    # dif class
-                    for batch_index in range(2*batch_size//num_batch,3*batch_size//num_batch):
-                        #print(batch_index)
-                        while True:
-                            try:
-                                rootpath1 = 0
-                                rootpath2 = 0
-                                while rootpath1==rootpath2:
-                                    rand_2k = np.random.permutation(len(path2K))
-                                    rootpath1 = path2K[rand_2k[0]].split('/')[5]
-                                    rootpath2 = path2K[rand_2k[-1]].split('/')[5]
-                                    print(rootpath1)
-                                    print(rootpath2)
-                                    fp1 = path2K[rand_2k[0]]
-                                    fp2 = path2K[rand_2k[1]]
-                                    img1,imgTarget = self.gen_data(fp1)
-                                    img2, tmp = self.gen_data(fp2)
-                                    batch_target[batch_index] = 0
-                                    batch_img1[batch_index] = img1
-                                    batch_img2[batch_index] = img2
-                                    batch_imgTarget[batch_index] = imgTarget
-                                    pass
-                            except:
-                                continue
-                            break
-                    print("4")  
+                    # print("3")  
                     # same class dip
-                    for batch_index in range(3*batch_size//num_batch,4*batch_size//num_batch):
+                    for batch_index in range(2*batch_size//num_batch,3*batch_size//num_batch):
                         #print(batch_index)
                         while True:
                             try:
@@ -260,7 +205,32 @@ class TmClassify:
                             except:
                                 continue
                             break
-                    print("5")   
+                    # print("4")
+                    # dif class
+                    for batch_index in range(3*batch_size//num_batch,4*batch_size//num_batch):
+                        #print(batch_index)
+                        while True:
+                            try:
+                                rootpath1 = 0
+                                rootpath2 = 0
+                                while rootpath1==rootpath2:
+                                    rand_2k = np.random.permutation(len(path2K))
+                                    rootpath1 = path2K[rand_2k[0]].split('/')[5]
+                                    rootpath2 = path2K[rand_2k[-1]].split('/')[5]
+                                    fp1 = path2K[rand_2k[0]]
+                                    fp2 = path2K[rand_2k[1]]
+                                    img1,imgTarget = self.gen_data(fp1)
+                                    img2, tmp = self.gen_data(fp2)
+                                    batch_target[batch_index] = 0
+                                    batch_img1[batch_index] = img1
+                                    batch_img2[batch_index] = img2
+                                    batch_imgTarget[batch_index] = imgTarget
+                                    pass
+                            except:
+                                continue
+                            break
+                   
+                    # print("5")   
                     # dif class dip
                     for batch_index in range(4*batch_size//num_batch,5*batch_size//num_batch):
                         #print(batch_index)
@@ -302,21 +272,30 @@ class TmClassify:
                         with train_summary_writer.as_default():
                             images1 = np.reshape(batch_img1, (-1, 224, 224, 3))
                             images2 = np.reshape(batch_img2, (-1, 224, 224, 3))
+                            # print('concat')
+                            # image = np.concatenate((images1[0],images2[0]),axis=1)
+                            # print('concatend')
                             result = self.modelDisc.predict([images1,images2])
-                            print(result)
-                            tf.summary.text("discrimated", '\n'.join(str(result)), step=step)
-                            tf.summary.image("1 input1", ((images1+1)*127.5).astype('uint8'), max_outputs=20, step=step)
-                            tf.summary.image("2 input2", ((images2+1)*127.5).astype('uint8'), max_outputs=20, step=step)
-                           
+                            result = result.tolist()
+                            # print('write')
+                            # for i in range(50):
+                            #     images1[i] = cv2.putText(images1[i],result[i],(0,0), cv2.FONT_HERSHEY_SIMPLEX, 4, (255, 0, 0), 2, cv2.LINE_AA)
+                            #     images2[i] = cv2.putText(images2[i],result[i],(0,0), cv2.FONT_HERSHEY_SIMPLEX, 4, (255, 0, 0), 2, cv2.LINE_AA)
+                            # print(result)
+                            tf.summary.text("1 discrimated", '\n'.join(str(result[0:25])), step=step)
+                            tf.summary.text("0 discrimated", '\n'.join(str(result[25:50])), step=step)
+                            tf.summary.image("1 input1", ((images1+1)*127.5).astype('uint8'), max_outputs=50, step=step)
+                            tf.summary.image("2 input2", ((images2+1)*127.5).astype('uint8'), max_outputs=50, step=step)
+                            # tf.summary.image("0 pair", ((image+1)*127.5).astype('uint8'), max_outputs=50, step=step)
                     
 if __name__ == "__main__":
     TC = TmClassify()
     # TC.encoder = load_model('DIPEncoder.h5')
     # TC.discriminator = load_model('DIPdiscriminator.h5')
-    # TC.encoder.load_weights('ATencoder.Weights.h5')
-    # TC.discriminator.load_weights('ATdiscriminator.Weights.h5')
+    TC.encoder.load_weights('DCencoder.Weights.h5')
+    TC.discriminator.load_weights('DCdiscriminator.Weights.h5')
     # TC.decoder.load_weights('ATdecoder.Weights.h5')
     # TC.model = load_model(r'DIPMatchV9.h5')
     # TC.model.layers[2].save_weights('DIPencoderWeightsV1.h5')
     # TC.model.layers[4].save_weights('DIPdiscriminatorWeightsV1.h5')
-    TC.train(1,10000,5,50)
+    TC.train(1,10000,50,50)
