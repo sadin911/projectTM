@@ -11,7 +11,7 @@ import shutil
 from pathlib import Path
 import os
 pathlist = []
-path_input = r'D:/project/projectTM/src/imageGroupALLV2/**/*.jpg'
+path_input = r'D:/project/projectTM/src/imageGroupALLV3/**/*.jpg'
 pathlist.extend(glob2.glob(path_input))
 
 for file in pathlist:

@@ -19,7 +19,7 @@ import pandas as pd
 from sklearn.preprocessing import normalize
 from pathlib import Path
 
-df = pd.read_csv(r'D:/datasets/LSLOGO/List/train_images_root.txt', delimiter = "\t",header=None)
+df = pd.read_csv(r'D:/datasets/LSLOGO/List/test_images_root.txt', delimiter = "\t",header=None)
 path2K = df[0].tolist()
 path_input = r'D:/project/projectTM/src/imageGroupALLV2/**/'
 types = ('*.bmp', '*.jpg' ,'.*gif' ,'*.png' , '*.tif', 'jpeg')

@@ -27,9 +27,9 @@ import pandas as pd
 from sklearn.preprocessing import normalize
 from pathlib import Path
 
-df = pd.read_csv(r'D:/datasets/LSLOGO/List/train_images_root.txt', delimiter = "\t",header=None)
+df = pd.read_csv(r'../../LSLOGO/List/test_images_root.txt', delimiter = "\t",header=None)
 path2K = df[0].tolist()
-path2K = [r'D:/datasets/LSLOGO/Logo-2K+/' + x for x in path2K]
+path2K = [r'../../LSLOGO/Logo-2K+/' + x for x in path2K]
 sdir = glob2.glob(r"D:/project/projectTM/src/imageGroupALLV3/*/")
 current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 os.makedirs('logs',exist_ok=True)
@@ -165,30 +165,10 @@ class TmClassify:
                             except:
                                 continue
                             break
-                    # print("2")
-                    # Same Pic
-                    for batch_index in range(batch_size//num_batch,2*batch_size//num_batch):
-                        #print(batch_index)
-                        while True:
-                            try:
-                                rand_2k = np.random.permutation(len(path2K))
-                                fp = path2K[rand_2k[0]]
-                                fp_par = Path(fp).parents[0]
-                                filedir = glob2.glob(str(fp_par) + '/*')
-                                random_permu = np.random.permutation(len(filedir))
-                                img1, imgTarget = self.gen_data(filedir[random_permu[0]])
-                                img2, tmp = self.gen_data(filedir[random_permu[0]])
-                                batch_target[batch_index] = 1
-                                batch_img1[batch_index] = img1
-                                batch_img2[batch_index] = img2
-                                batch_imgTarget[batch_index] = imgTarget
-                                pass
-                            except:
-                                continue
-                            break
-                    # print("3")  
+                    
+                    # print("2")  
                     # same class dip
-                    for batch_index in range(2*batch_size//num_batch,3*batch_size//num_batch):
+                    for batch_index in range(1*batch_size//num_batch,2*batch_size//num_batch):
                         #print(batch_index)
                         while True:
                             try:
@@ -205,9 +185,9 @@ class TmClassify:
                             except:
                                 continue
                             break
-                    # print("4")
+                    # print("3")
                     # dif class
-                    for batch_index in range(3*batch_size//num_batch,4*batch_size//num_batch):
+                    for batch_index in range(2*batch_size//num_batch,3*batch_size//num_batch):
                         #print(batch_index)
                         while True:
                             try:
@@ -217,6 +197,7 @@ class TmClassify:
                                     rand_2k = np.random.permutation(len(path2K))
                                     rootpath1 = path2K[rand_2k[0]].split('/')[5]
                                     rootpath2 = path2K[rand_2k[-1]].split('/')[5]
+                                    # print(rootpath1,rootpath2)
                                     fp1 = path2K[rand_2k[0]]
                                     fp2 = path2K[rand_2k[1]]
                                     img1,imgTarget = self.gen_data(fp1)
@@ -230,9 +211,9 @@ class TmClassify:
                                 continue
                             break
                    
-                    # print("5")   
+                    # print("4")   
                     # dif class dip
-                    for batch_index in range(4*batch_size//num_batch,5*batch_size//num_batch):
+                    for batch_index in range(3*batch_size//num_batch,4*batch_size//num_batch):
                         #print(batch_index)
                         while True:
                             try:
@@ -253,6 +234,30 @@ class TmClassify:
                                 # print('x')
                                 continue
                             break
+                        
+                    # print("5")
+                    # dif 2k dip
+                    for batch_index in range(4*batch_size//num_batch,5*batch_size//num_batch):
+                        #print(batch_index)
+                        while True:
+                            try:
+                                random_permu = np.random.permutation(len(sdir))
+                                rand_2k = np.random.permutation(len(path2K))
+                                fp1 = path2K[rand_2k[0]]
+                                filelist1 = glob2.glob(sdir[random_permu[batch_index]]+'/*')
+                                filelist2 = glob2.glob(sdir[random_permu[-1-batch_index]]+'/*')
+                                file_permu1 = np.random.permutation(len(filelist1))
+                                file_permu2 = np.random.permutation(len(filelist2)) 
+                                img1,imgTarget = self.gen_data(filelist1[file_permu1[0]])
+                                img2, tmp = self.gen_data(fp1)
+                                batch_target[batch_index] = 0
+                                batch_img1[batch_index] = img1
+                                batch_img2[batch_index] = img2
+                                batch_imgTarget[batch_index] = imgTarget
+                                pass
+                            except:
+                                continue
+                            break
         
                     train_loss = self.modelDisc.train_on_batch([batch_img1,batch_img2],batch_target)
                     
@@ -266,8 +271,8 @@ class TmClassify:
                     
                     if(step_index%viz_interval==0):
                         print('ok',end='\r')
-                        self.modelDisc.layers[2].save_weights('DCencoder.Weights.h5')
-                        self.modelDisc.layers[4].save_weights('DCdiscriminator.Weights.h5')
+                        self.modelDisc.layers[2].save_weights('DCencoderV2.Weights.h5')
+                        self.modelDisc.layers[4].save_weights('DCdiscriminatorV2.Weights.h5')
 
                         with train_summary_writer.as_default():
                             images1 = np.reshape(batch_img1, (-1, 224, 224, 3))
@@ -282,8 +287,8 @@ class TmClassify:
                             #     images1[i] = cv2.putText(images1[i],result[i],(0,0), cv2.FONT_HERSHEY_SIMPLEX, 4, (255, 0, 0), 2, cv2.LINE_AA)
                             #     images2[i] = cv2.putText(images2[i],result[i],(0,0), cv2.FONT_HERSHEY_SIMPLEX, 4, (255, 0, 0), 2, cv2.LINE_AA)
                             # print(result)
-                            tf.summary.text("1 discrimated", '\n'.join(str(result[0:25])), step=step)
-                            tf.summary.text("0 discrimated", '\n'.join(str(result[25:50])), step=step)
+                            tf.summary.text("1 discrimated", '\n'.join(str(result[0:20])), step=step)
+                            tf.summary.text("0 discrimated", '\n'.join(str(result[20:50])), step=step)
                             tf.summary.image("1 input1", ((images1+1)*127.5).astype('uint8'), max_outputs=50, step=step)
                             tf.summary.image("2 input2", ((images2+1)*127.5).astype('uint8'), max_outputs=50, step=step)
                             # tf.summary.image("0 pair", ((image+1)*127.5).astype('uint8'), max_outputs=50, step=step)
