@@ -1,6 +1,6 @@
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 from tensorflow.keras.callbacks import TensorBoard
 import glob2
 import tensorflow as tf
@@ -28,17 +28,17 @@ path_input = r'D:/project/projectTM/src/imageGroupALLV3/**/0*.jpg'
 path_ref = r'D:/project/projectTM/src/imageGroupALLV3/**/[1-9]*.jpg'
 
 types = ('*.jpg')
-df = pd.read_csv(r'D:/datasets/LSLOGO/List/test_images_root.txt', delimiter = "\t",header=None)
+df = pd.read_csv(r'../LSLOGO/List/train_images_root.txt', delimiter = "\t",header=None)
 path2K = df[0].tolist()
 pathlist = []
 pathref = []
-dirpath = 'V2outputDIPEnV9'
+dirpath = 'DCDIPREF_bgNotTrain_Gray'
 
 
 if os.path.exists(dirpath):
     shutil.rmtree(dirpath)
 
-path2K = [r'D:/datasets/LSLOGO/Logo-2K+/' + x for x in path2K]
+path2K = [r'../LSLOGO/Logo-2K+/' + x for x in path2K]
 pathlist.extend(glob2.glob(path_input))
 pathref.extend(glob2.glob(path_ref))
     
@@ -78,8 +78,8 @@ def createDiscriminator():
 model = createEncoder()
 model_discriminator = createDiscriminator()
 
-model_discriminator.load_weights(r'DCdiscriminator.Weights.h5')
-model.load_weights(r'DCencoder.Weights.h5')
+model_discriminator.load_weights(r'train/DCdiscriminatorV3.Weights.h5')
+model.load_weights(r'train/DCencoderV3.Weights.h5')
 
 feature = []
 feature_ref = []
@@ -96,6 +96,8 @@ for iteration in range(IterNum_N):
     for batch_index in range(batchsize_N):
         fp = pathlist[real_index]
         img_pil = Image.open(fp).convert('RGB')
+        enhancer_color = ImageEnhance.Color(img_pil)
+        img_pil = enhancer_color.enhance(0)
         img_pil = img_pil.resize((224,224))
         img_cv = np.asarray(img_pil)
         batchImg[batch_index] = img_cv/127.5-1   
@@ -107,7 +109,7 @@ for iteration in range(IterNum_N):
         feature.append(out[n])
     
 
-IterNum_R = 50
+IterNum_R = 10
 batchsize_R = len(pathref)//IterNum_R
 batchImg = np.zeros((batchsize_R,224,224,3))
 real_index = 0
@@ -117,6 +119,8 @@ for iteration in range(IterNum_R):
     for batch_index in range(batchsize_R):
         fp = pathref[real_index]
         img_pil = Image.open(fp).convert('RGB')
+        enhancer_color = ImageEnhance.Color(img_pil)
+        img_pil = enhancer_color.enhance(0)
         img_pil = img_pil.resize((224,224))
         img_cv = np.asarray(img_pil)
         batchImg[batch_index] = img_cv/127.5-1  
@@ -127,28 +131,28 @@ for iteration in range(IterNum_R):
     for n in range(len(out)):
         feature_ref.append(out[n])
 
-Path(r"models/DIPEnV9All/").mkdir(parents=True, exist_ok=True)
+Path(f"models/{dirpath}/").mkdir(parents=True, exist_ok=True)
 
-pkl_filename = r"models/DIPEnV9All/V2scbDIP_no_EnV9.pkl"
+pkl_filename = f"models/{dirpath}/V2scbDIP_no_EnV9.pkl"
 with open(pkl_filename, 'wb') as file:
     pickle.dump(feature, file)
     
-pkl_filename = r"models/DIPEnV9All/V2scbDIP_no_EnV9ref.pkl"
+pkl_filename = f"models/{dirpath}/V2scbDIP_no_EnV9ref.pkl"
 with open(pkl_filename, 'wb') as file:
     pickle.dump(feature_ref, file)
     
-pkl_filename = r"models/DIPEnV9All/V2pathlistDIP_no_EnV9.pkl"
+pkl_filename = f"models/{dirpath}/V2pathlistDIP_no_EnV9.pkl"
 with open(pkl_filename, 'wb') as file:
     pickle.dump(real_pathinput, file)
     
-pkl_filename = r"models/DIPEnV9All/V2pathlistDIP_no_EnV9ref.pkl"
+pkl_filename = f"models/{dirpath}/V2pathlistDIP_no_EnV9ref.pkl"
 with open(pkl_filename, 'wb') as file:
     pickle.dump(real_pathref, file)
     
-features = pickle.load(open(r'models/DIPEnV9All/V2scbDIP_no_EnV9.pkl', 'rb'))
-features_ref = pickle.load(open(r'models/DIPEnV9All/V2scbDIP_no_EnV9ref.pkl', 'rb'))
-pathlist = pickle.load(open(r'models/DIPEnV9All/V2pathlistDIP_no_EnV9.pkl', 'rb'))
-pathref = pickle.load(open(r'models/DIPEnV9All/V2pathlistDIP_no_EnV9ref.pkl', 'rb'))
+features = pickle.load(open(f'models/{dirpath}/V2scbDIP_no_EnV9.pkl', 'rb'))
+features_ref = pickle.load(open(f'models/{dirpath}/V2scbDIP_no_EnV9ref.pkl', 'rb'))
+pathlist = pickle.load(open(f'models/{dirpath}/V2pathlistDIP_no_EnV9.pkl', 'rb'))
+pathref = pickle.load(open(f'models/{dirpath}/V2pathlistDIP_no_EnV9ref.pkl', 'rb'))
 
 
 f = np.asarray(features)
@@ -200,17 +204,17 @@ for n in range(len(features)):
     print({f"index={in_name} AP={AP} Rank={list_find}"})
     # progressBar(n, len(features))
     Total_AP = Total_AP + AP
-    Path(f"V2outputDIPEnV9/{in_name}_{list_find[0]}").mkdir(parents=True, exist_ok=True)
+    Path(f"{dirpath}/{in_name}_{list_find[0]}").mkdir(parents=True, exist_ok=True)
     img_input = Image.open(paths[n]).convert('RGB')
-    img_input.save(f"V2outputDIPEnV9/{in_name}_{list_find[0]}/0000.jpg")
+    img_input.save(f"{dirpath}/{in_name}_{list_find[0]}/0000.jpg")
     for i in range(len(list_find)):
         img_input = Image.open(pathsTop[list_find[i]]).convert('RGB')
-        img_input.save(f"V2outputDIPEnV9/{in_name}_{list_find[0]}/000_{list_find[i]}.jpg")
+        img_input.save(f"{dirpath}/{in_name}_{list_find[0]}/000_{list_find[i]}.jpg")
     for i in range(50):
         img = Image.open(pathsTop[i]).convert('RGB')
         filename = os.path.basename(pathsTop[i])
         sc = scoreTop[i]
-        img.save(f"V2outputDIPEnV9/{in_name}_{list_find[0]}/{i}_{sc}.jpg")
+        img.save(f"{dirpath}/{in_name}_{list_find[0]}/{i}_{sc}.jpg")
     
         
         
@@ -232,14 +236,14 @@ cmc.plot(title = 'CMC on Search Rank\n', rank=100,
          xlabel='Rank',
          ylabel='Hit Rate', show_grid=False)
 
-pkl_filename = r"models/DIPEnV9All/V2sum_CMC.pkl"
+pkl_filename = f"models/{dirpath}/V2sum_CMC.pkl"
 with open(pkl_filename, 'wb') as file:
     pickle.dump(sum_CMC, file)
     
-pkl_filename = r"models/DIPEnV9All/V2CMC_Rank.pkl"
+pkl_filename = f"models/{dirpath}/V2CMC_Rank.pkl"
 with open(pkl_filename, 'wb') as file:
     pickle.dump(Rank_CMC, file)
     
-pkl_filename = r"models/DIPEnV9All/V2MAPAP.pkl"
+pkl_filename = f"models/{dirpath}/V2MAPAP.pkl"
 with open(pkl_filename, 'wb') as file:
     pickle.dump(MAPAP, file)

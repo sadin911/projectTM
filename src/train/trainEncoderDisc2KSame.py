@@ -120,7 +120,7 @@ class TmClassify:
 
         img_pil = enhancer_contrat.enhance(contrast_factor)
         img_pil = enhancer_brightness.enhance(brightness_factor)
-        img_pil = enhancer_color.enhance(color_factor)
+        img_pil = enhancer_color.enhance(0)
         img_pil = ImageChops.offset(img_pil, int(translate_factor_hor), int(translate_factor_ver))
         
         img_pil = img_pil.rotate(rotate_param,resample = Image.BILINEAR,expand = True, fillcolor = (255,255,255))
@@ -271,8 +271,8 @@ class TmClassify:
                     
                     if(step_index%viz_interval==0):
                         print('ok',end='\r')
-                        self.modelDisc.layers[2].save_weights('DCencoderV2.Weights.h5')
-                        self.modelDisc.layers[4].save_weights('DCdiscriminatorV2.Weights.h5')
+                        self.modelDisc.layers[2].save_weights('G:/My Drive/DVC\ProjectTM/DCencoderV3.Weights.h5')
+                        self.modelDisc.layers[4].save_weights('G:/My Drive/DVC\ProjectTM/DCdiscriminatorV3.Weights.h5')
 
                         with train_summary_writer.as_default():
                             images1 = np.reshape(batch_img1, (-1, 224, 224, 3))
@@ -297,8 +297,8 @@ if __name__ == "__main__":
     TC = TmClassify()
     # TC.encoder = load_model('DIPEncoder.h5')
     # TC.discriminator = load_model('DIPdiscriminator.h5')
-    TC.encoder.load_weights('DCencoder.Weights.h5')
-    TC.discriminator.load_weights('DCdiscriminator.Weights.h5')
+    TC.encoder.load_weights('G:/My Drive/DVC\ProjectTM/DCencoderV2.Weights.h5')
+    TC.discriminator.load_weights('G:/My Drive/DVC\ProjectTM/DCdiscriminatorV2.Weights.h5')
     # TC.decoder.load_weights('ATdecoder.Weights.h5')
     # TC.model = load_model(r'DIPMatchV9.h5')
     # TC.model.layers[2].save_weights('DIPencoderWeightsV1.h5')
